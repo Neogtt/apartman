@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createApartmentOrder } from '../utils/api';
+import { createApartmentOrder, getOrderTimeInfo } from '../utils/api';
 import './ApartmentOrder.css';
 
 function ApartmentOrder() {
@@ -12,8 +12,9 @@ function ApartmentOrder() {
   const [error, setError] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState(null);
+  const [timeInfo, setTimeInfo] = useState(null);
 
-  // Kullanıcı giriş yaptıysa daire numarasını otomatik doldur
+  // Kullanıcı giriş yaptıysa daire numarasını otomatik doldur ve saat bilgisini al
   useEffect(() => {
     const savedUser = localStorage.getItem('apartmentUser');
     if (savedUser) {
@@ -24,6 +25,22 @@ function ApartmentOrder() {
         console.error('Kullanıcı bilgisi okunamadı:', e);
       }
     }
+
+    // Sipariş saat bilgisini al
+    loadTimeInfo();
+    // Her 30 saniyede bir güncelle
+    const timeInterval = setInterval(loadTimeInfo, 30000);
+    return () => clearInterval(timeInterval);
+  }, []);
+
+  const loadTimeInfo = async () => {
+    try {
+      const response = await getOrderTimeInfo();
+      setTimeInfo(response.data);
+    } catch (error) {
+      console.error('Saat bilgisi yüklenemedi:', error);
+    }
+  };
 
     // Web Speech API'yi başlat
     const initSpeechRecognition = () => {
@@ -120,12 +137,18 @@ function ApartmentOrder() {
 
     setLoading(true);
     try {
-      await createApartmentOrder({
+      const response = await createApartmentOrder({
         apartmentNumber: apartmentNumber.trim(),
         orderText: orderText.trim(),
         contactInfo: contactInfo.trim(),
         isTrashCollection: isTrashCollection
       });
+      
+      // Saat bilgisini güncelle
+      if (response.data.timeInfo) {
+        setTimeInfo(response.data.timeInfo);
+      }
+      
       setSuccess(true);
       // Daire numarasını sadece giriş yapılmamışsa temizle
       const savedUser = localStorage.getItem('apartmentUser');
@@ -136,10 +159,14 @@ function ApartmentOrder() {
       setContactInfo('');
       setIsTrashCollection(false);
       
-      // Başarı mesajını 3 saniye sonra kaldır
-      setTimeout(() => setSuccess(false), 3000);
+      // Başarı mesajını 5 saniye sonra kaldır
+      setTimeout(() => setSuccess(false), 5000);
     } catch (err) {
       setError(err.response?.data?.error || 'Sipariş gönderilirken bir hata oluştu. Lütfen tekrar deneyin.');
+      // Hata durumunda saat bilgisini güncelle
+      if (err.response?.data?.timeInfo) {
+        setTimeInfo(err.response.data.timeInfo);
+      }
     } finally {
       setLoading(false);
     }
@@ -179,9 +206,28 @@ function ApartmentOrder() {
         <h1>🏠 Apartman Sipariş Formu</h1>
         <p className="subtitle">İhtiyaçlarınızı buradan görevliye iletebilirsiniz</p>
 
+        {timeInfo && (
+          <div className={`time-info-box ${timeInfo.canOrder ? 'time-info-open' : 'time-info-closed'}`}>
+            <div className="time-info-header">
+              <span className="time-icon">🕐</span>
+              <span className="current-time">{timeInfo.currentTime} (GMT+3)</span>
+            </div>
+            <p className="time-message">{timeInfo.message}</p>
+            {!timeInfo.canOrder && (
+              <p className="time-warning">⚠️ Şu anda sipariş kabul edilmiyor</p>
+            )}
+          </div>
+        )}
+
         {success && (
           <div className="alert alert-success">
-            ✅ Siparişiniz başarıyla gönderildi! Görevli en kısa sürede sizinle iletişime geçecektir.
+            ✅ Siparişiniz başarıyla gönderildi! 
+            {timeInfo && timeInfo.message && (
+              <div style={{ marginTop: '10px', fontSize: '0.9rem' }}>
+                📌 {timeInfo.message}
+              </div>
+            )}
+            <div style={{ marginTop: '10px' }}>Görevli en kısa sürede sizinle iletişime geçecektir.</div>
           </div>
         )}
 
@@ -281,9 +327,9 @@ function ApartmentOrder() {
           <button 
             type="submit" 
             className="submit-button"
-            disabled={loading}
+            disabled={loading || (timeInfo && !timeInfo.canOrder)}
           >
-            {loading ? 'Gönderiliyor...' : '📤 Siparişi Gönder'}
+            {loading ? 'Gönderiliyor...' : (timeInfo && !timeInfo.canOrder) ? '⏰ Sipariş Saatleri Dışı' : '📤 Siparişi Gönder'}
           </button>
         </form>
 

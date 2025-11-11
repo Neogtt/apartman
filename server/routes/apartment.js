@@ -103,6 +103,56 @@ router.get('/orders/apartment/:apartmentNumber', (req, res) => {
   }
 });
 
+// Sipariş saat kontrolü (GMT+3)
+function getOrderTimeInfo() {
+  // GMT+3 saat dilimi
+  const now = new Date();
+  const gmt3Time = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Istanbul"}));
+  const hours = gmt3Time.getHours();
+  const minutes = gmt3Time.getMinutes();
+  const currentTime = hours * 60 + minutes; // Dakika cinsinden
+
+  // Sipariş saatleri (dakika cinsinden)
+  const MORNING_END = 7 * 60 + 30; // 07:30
+  const LUNCH_END = 15 * 60; // 15:00
+  const EVENING_END = 18 * 60 + 30; // 18:30
+  const NIGHT_START = 19 * 60; // 19:00
+
+  let orderType = '';
+  let message = '';
+  let canOrder = true;
+
+  if (currentTime >= NIGHT_START || currentTime < MORNING_END) {
+    // 19:00 - 07:30: Sabah siparişi (ertesi gün)
+    orderType = 'morning';
+    message = 'Ertesi gün sabah siparişi veriyorsunuz';
+    canOrder = true;
+  } else if (currentTime >= MORNING_END && currentTime < LUNCH_END) {
+    // 07:30 - 15:00: Öğlen siparişi
+    orderType = 'lunch';
+    message = 'Öğlen için sipariş veriyorsunuz';
+    canOrder = true;
+  } else if (currentTime >= LUNCH_END && currentTime < EVENING_END) {
+    // 15:00 - 18:30: Akşam siparişi
+    orderType = 'evening';
+    message = 'Akşam için sipariş veriyorsunuz (18:30\'a kadar)';
+    canOrder = true;
+  } else {
+    // 18:30 - 19:00: Sipariş kabul edilmez
+    orderType = 'closed';
+    message = 'Sipariş kabul saatleri dışındasınız. Lütfen 19:00\'dan sonra tekrar deneyin.';
+    canOrder = false;
+  }
+
+  return {
+    canOrder,
+    orderType,
+    message,
+    currentTime: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
+    timeZone: 'GMT+3'
+  };
+}
+
 // Yeni sipariş ekle
 router.post('/orders', (req, res) => {
   try {
@@ -112,6 +162,15 @@ router.post('/orders', (req, res) => {
       return res.status(400).json({ error: 'Daire numarası ve sipariş metni gereklidir' });
     }
 
+    // Sipariş saat kontrolü
+    const timeInfo = getOrderTimeInfo();
+    if (!timeInfo.canOrder) {
+      return res.status(400).json({ 
+        error: timeInfo.message,
+        timeInfo: timeInfo
+      });
+    }
+
     const data = readData();
     const newOrder = {
       id: uuidv4(),
@@ -119,6 +178,8 @@ router.post('/orders', (req, res) => {
       orderText,
       contactInfo: contactInfo || '',
       isTrashCollection: isTrashCollection || false,
+      orderType: timeInfo.orderType, // morning, lunch, evening
+      orderTimeMessage: timeInfo.message,
       status: 'pending', // pending, completed, cancelled
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -135,12 +196,25 @@ router.post('/orders', (req, res) => {
     }
 
     if (writeData(data)) {
-      res.status(201).json(newOrder);
+      res.status(201).json({
+        ...newOrder,
+        timeInfo: timeInfo
+      });
     } else {
       res.status(500).json({ error: 'Sipariş kaydedilemedi' });
     }
   } catch (error) {
     res.status(500).json({ error: 'Sipariş eklenemedi', details: error.message });
+  }
+});
+
+// Sipariş saat bilgisi endpoint
+router.get('/order-time-info', (req, res) => {
+  try {
+    const timeInfo = getOrderTimeInfo();
+    res.json(timeInfo);
+  } catch (error) {
+    res.status(500).json({ error: 'Saat bilgisi alınamadı', details: error.message });
   }
 });
 

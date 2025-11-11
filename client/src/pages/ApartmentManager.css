@@ -206,6 +206,41 @@
   font-size: 0.9rem;
 }
 
+.order-type-badge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  text-align: center;
+  font-size: 0.85rem;
+  display: inline-block;
+}
+
+.order-type-morning {
+  background: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #90caf9;
+}
+
+.order-type-lunch {
+  background: #fff3e0;
+  color: #f57c00;
+  border: 1px solid #ffb74d;
+}
+
+.order-type-evening {
+  background: #f3e5f5;
+  color: #7b1fa2;
+  border: 1px solid #ba68c8;
+}
+
+.order-time-message {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 5px 0 10px 0;
+  font-style: italic;
+}
+
 .order-text {
   font-size: 1rem;
   color: #333;

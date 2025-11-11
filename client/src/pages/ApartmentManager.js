@@ -179,6 +179,16 @@ function ApartmentManager() {
                       🗑️ ÇÖP ALMA - Kapı çalınmayacak
                     </div>
                   )}
+                  {order.orderType && (
+                    <div className={`order-type-badge order-type-${order.orderType}`}>
+                      {order.orderType === 'morning' && '🌅 Sabah Siparişi'}
+                      {order.orderType === 'lunch' && '🍽️ Öğlen Siparişi'}
+                      {order.orderType === 'evening' && '🌆 Akşam Siparişi'}
+                    </div>
+                  )}
+                  {order.orderTimeMessage && (
+                    <p className="order-time-message">📌 {order.orderTimeMessage}</p>
+                  )}
                   <p className="order-text">{order.orderText}</p>
                   {order.contactInfo && (
                     <p className="order-contact">📞 {order.contactInfo}</p>

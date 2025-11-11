@@ -17,6 +17,7 @@ export const updateApartmentOrderStatus = (id, status) => api.patch(`/apartment/
 export const deleteApartmentOrder = (id) => api.delete(`/apartment/orders/${id}`);
 export const getApartments = () => api.get('/apartment/apartments');
 export const getApartmentStats = () => api.get('/apartment/stats');
+export const getOrderTimeInfo = () => api.get('/apartment/order-time-info');
 
 // Auth
 export const loginApartment = (apartmentNumber, password) => api.post('/apartment/auth/login', { apartmentNumber, password });
