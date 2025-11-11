@@ -10,6 +10,8 @@ function ApartmentOrder() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState(null);
 
   // Kullanıcı giriş yaptıysa daire numarasını otomatik doldur
   useEffect(() => {
@@ -21,6 +23,40 @@ function ApartmentOrder() {
       } catch (e) {
         console.error('Kullanıcı bilgisi okunamadı:', e);
       }
+    }
+
+    // Web Speech API'yi başlat
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = false;
+      recognitionInstance.lang = 'tr-TR'; // Türkçe
+
+      recognitionInstance.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setOrderText(prev => prev + (prev ? ' ' : '') + transcript);
+        setIsListening(false);
+      };
+
+      recognitionInstance.onerror = (event) => {
+        console.error('Ses tanıma hatası:', event.error);
+        setIsListening(false);
+        if (event.error === 'not-allowed') {
+          setError('Mikrofon erişim izni gerekli. Lütfen tarayıcı ayarlarından izin verin.');
+        } else {
+          setError('Ses tanıma hatası: ' + event.error);
+        }
+        setTimeout(() => setError(''), 5000);
+      };
+
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+      };
+
+      setRecognition(recognitionInstance);
+    } else {
+      console.warn('Bu tarayıcı ses tanımayı desteklemiyor');
     }
   }, []);
 
@@ -58,6 +94,22 @@ function ApartmentOrder() {
       setError(err.response?.data?.error || 'Sipariş gönderilirken bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStartListening = () => {
+    if (!recognition) {
+      setError('Ses tanıma bu tarayıcıda desteklenmiyor');
+      return;
+    }
+
+    if (isListening) {
+      recognition.stop();
+      setIsListening(false);
+    } else {
+      setError('');
+      setIsListening(true);
+      recognition.start();
     }
   };
 
@@ -103,15 +155,36 @@ function ApartmentOrder() {
             <label htmlFor="orderText">
               İhtiyaç / Sipariş Detayları <span className="required">*</span>
             </label>
-            <textarea
-              id="orderText"
-              value={orderText}
-              onChange={(e) => setOrderText(e.target.value)}
-              placeholder="Örn: 2 kg domates, 1 ekmek, 1 paket süt..."
-              rows="5"
-              required
-              disabled={loading}
-            />
+            <div className="textarea-with-voice">
+              <textarea
+                id="orderText"
+                value={orderText}
+                onChange={(e) => setOrderText(e.target.value)}
+                placeholder="Örn: 2 kg domates, 1 ekmek, 1 paket süt... veya mikrofon butonuna tıklayarak sesli giriş yapabilirsiniz"
+                rows="5"
+                required
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={handleStartListening}
+                disabled={loading || !recognition}
+                className={`voice-button ${isListening ? 'listening' : ''}`}
+                title={isListening ? 'Dinlemeyi durdurmak için tıklayın' : 'Sesli giriş için tıklayın'}
+              >
+                {isListening ? '🛑' : '🎤'}
+              </button>
+            </div>
+            {isListening && (
+              <small className="listening-indicator">
+                🎙️ Dinliyorum... Konuşun (durdurmak için tekrar tıklayın)
+              </small>
+            )}
+            {!recognition && (
+              <small className="form-hint">
+                ⚠️ Bu tarayıcı ses tanımayı desteklemiyor (Chrome, Edge önerilir)
+              </small>
+            )}
           </div>
 
           <div className="form-group">
