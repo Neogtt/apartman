@@ -42,7 +42,8 @@ function ApartmentOrder() {
     }
   };
 
-    // Web Speech API'yi başlat
+  // Web Speech API'yi başlat
+  useEffect(() => {
     const initSpeechRecognition = () => {
       try {
         // Tarayıcı kontrolü

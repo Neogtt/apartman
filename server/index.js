@@ -1,13 +1,21 @@
-// Deprecation uyarılarını bastır (sadece production'da)
-if (process.env.NODE_ENV === 'production') {
-  const originalEmitWarning = process.emitWarning;
-  process.emitWarning = function(warning, ...args) {
-    if (warning && typeof warning === 'string' && warning.includes('DEP0060')) {
-      return; // util._extend uyarısını bastır
-    }
-    return originalEmitWarning.call(process, warning, ...args);
-  };
-}
+// Deprecation uyarılarını bastır (hem development hem production'da)
+const originalEmitWarning = process.emitWarning;
+process.emitWarning = function(warning, ...args) {
+  if (warning && typeof warning === 'string' && warning.includes('DEP0060')) {
+    return; // util._extend uyarısını bastır
+  }
+  return originalEmitWarning.call(process, warning, ...args);
+};
+
+// Ayrıca console.warn ile gelen uyarıları da filtrele
+const originalWarn = console.warn;
+console.warn = function(...args) {
+  const message = args.join(' ');
+  if (message.includes('DEP0060') || message.includes('util._extend')) {
+    return; // DEP0060 uyarısını bastır
+  }
+  return originalWarn.apply(console, args);
+};
 
 const express = require('express');
 const cors = require('cors');
