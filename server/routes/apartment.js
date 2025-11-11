@@ -210,6 +210,38 @@ router.get('/blocks', (req, res) => {
   }
 });
 
+// Görevli giriş
+router.post('/auth/staff-login', (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Kullanıcı adı ve şifre gereklidir' });
+    }
+
+    // Görevli bilgileri (production'da veritabanından alınmalı)
+    const STAFF_CREDENTIALS = {
+      username: 'gorevli1',
+      password: '123456'
+    };
+
+    if (username === STAFF_CREDENTIALS.username && password === STAFF_CREDENTIALS.password) {
+      res.json({
+        success: true,
+        message: 'Giriş başarılı',
+        user: {
+          username: STAFF_CREDENTIALS.username,
+          role: 'staff'
+        }
+      });
+    } else {
+      res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Giriş hatası', details: error.message });
+  }
+});
+
 // Sipariş durumunu güncelle
 router.patch('/orders/:id', (req, res) => {
   try {

@@ -20,6 +20,7 @@ export const getApartmentStats = () => api.get('/apartment/stats');
 
 // Auth
 export const loginApartment = (apartmentNumber, password) => api.post('/apartment/auth/login', { apartmentNumber, password });
+export const loginStaff = (username, password) => api.post('/apartment/auth/staff-login', { username, password });
 
 // Blocks
 export const getBlocks = () => api.get('/apartment/blocks');
