@@ -26,38 +26,86 @@ function ApartmentOrder() {
     }
 
     // Web Speech API'yi başlat
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognitionInstance = new SpeechRecognition();
-      recognitionInstance.continuous = false;
-      recognitionInstance.interimResults = false;
-      recognitionInstance.lang = 'tr-TR'; // Türkçe
-
-      recognitionInstance.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setOrderText(prev => prev + (prev ? ' ' : '') + transcript);
-        setIsListening(false);
-      };
-
-      recognitionInstance.onerror = (event) => {
-        console.error('Ses tanıma hatası:', event.error);
-        setIsListening(false);
-        if (event.error === 'not-allowed') {
-          setError('Mikrofon erişim izni gerekli. Lütfen tarayıcı ayarlarından izin verin.');
-        } else {
-          setError('Ses tanıma hatası: ' + event.error);
+    const initSpeechRecognition = () => {
+      try {
+        // Tarayıcı kontrolü
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+          console.warn('Bu tarayıcı ses tanımayı desteklemiyor');
+          return;
         }
+
+        const recognitionInstance = new SpeechRecognition();
+        recognitionInstance.continuous = false;
+        recognitionInstance.interimResults = false;
+        recognitionInstance.lang = 'tr-TR'; // Türkçe
+
+        recognitionInstance.onstart = () => {
+          console.log('Ses tanıma başladı');
+          setIsListening(true);
+        };
+
+        recognitionInstance.onresult = (event) => {
+          if (event.results && event.results.length > 0) {
+            const transcript = event.results[0][0].transcript;
+            setOrderText(prev => prev + (prev ? ' ' : '') + transcript);
+          }
+          setIsListening(false);
+        };
+
+        recognitionInstance.onerror = (event) => {
+          console.error('Ses tanıma hatası:', event.error);
+          setIsListening(false);
+          
+          let errorMessage = 'Ses tanıma hatası oluştu.';
+          
+          switch(event.error) {
+            case 'no-speech':
+              errorMessage = 'Konuşma algılanamadı. Lütfen tekrar deneyin ve net konuşun.';
+              break;
+            case 'audio-capture':
+              errorMessage = 'Mikrofon bulunamadı. Lütfen mikrofonunuzun bağlı olduğundan emin olun.';
+              break;
+            case 'not-allowed':
+              errorMessage = 'Mikrofon erişim izni gerekli. Lütfen tarayıcı ayarlarından izin verin.';
+              break;
+            case 'aborted':
+              errorMessage = 'Ses tanıma iptal edildi.';
+              break;
+            case 'network':
+              errorMessage = 'Ağ hatası. İnternet bağlantınızı kontrol edin.';
+              break;
+            case 'service-not-allowed':
+              errorMessage = 'Ses tanıma servisi kullanılamıyor. Chrome veya Edge tarayıcısını kullanmayı deneyin.';
+              break;
+            default:
+              errorMessage = `Ses tanıma hatası: ${event.error}. Chrome veya Edge tarayıcısını kullanmayı deneyin.`;
+          }
+          
+          setError(errorMessage);
+          setTimeout(() => setError(''), 5000);
+        };
+
+        recognitionInstance.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionInstance.onnomatch = () => {
+          setError('Konuşma anlaşılamadı. Lütfen tekrar deneyin.');
+          setIsListening(false);
+          setTimeout(() => setError(''), 5000);
+        };
+
+        setRecognition(recognitionInstance);
+      } catch (error) {
+        console.error('Ses tanıma başlatma hatası:', error);
+        setError('Ses tanıma başlatılamadı. Chrome veya Edge tarayıcısını kullanmayı deneyin.');
         setTimeout(() => setError(''), 5000);
-      };
+      }
+    };
 
-      recognitionInstance.onend = () => {
-        setIsListening(false);
-      };
-
-      setRecognition(recognitionInstance);
-    } else {
-      console.warn('Bu tarayıcı ses tanımayı desteklemiyor');
-    }
+    initSpeechRecognition();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -99,17 +147,29 @@ function ApartmentOrder() {
 
   const handleStartListening = () => {
     if (!recognition) {
-      setError('Ses tanıma bu tarayıcıda desteklenmiyor');
+      setError('Ses tanıma bu tarayıcıda desteklenmiyor. Chrome veya Edge tarayıcısını kullanmayı deneyin.');
+      setTimeout(() => setError(''), 5000);
       return;
     }
 
     if (isListening) {
-      recognition.stop();
-      setIsListening(false);
+      try {
+        recognition.stop();
+        setIsListening(false);
+      } catch (error) {
+        console.error('Durdurma hatası:', error);
+        setIsListening(false);
+      }
     } else {
       setError('');
-      setIsListening(true);
-      recognition.start();
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error('Başlatma hatası:', error);
+        setError('Ses tanıma başlatılamadı. Lütfen tekrar deneyin veya Chrome/Edge kullanın.');
+        setIsListening(false);
+        setTimeout(() => setError(''), 5000);
+      }
     }
   };
 
@@ -181,8 +241,10 @@ function ApartmentOrder() {
               </small>
             )}
             {!recognition && (
-              <small className="form-hint">
-                ⚠️ Bu tarayıcı ses tanımayı desteklemiyor (Chrome, Edge önerilir)
+              <small className="form-hint warning-hint">
+                ⚠️ Bu tarayıcı ses tanımayı desteklemiyor. Mac'te Chrome veya Edge tarayıcısını kullanmanız önerilir.
+                <br />
+                Safari'de ses tanıma özelliği çalışmayabilir.
               </small>
             )}
           </div>

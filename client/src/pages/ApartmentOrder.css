@@ -171,6 +171,12 @@
   }
 }
 
+.warning-hint {
+  color: #f39c12 !important;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
 .submit-button {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
