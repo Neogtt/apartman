@@ -16,6 +16,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
+// Render.com otomatik PORT atar, yoksa 3002 kullan
 const PORT = process.env.PORT || 3002;
 
 // Middleware
