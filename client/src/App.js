@@ -61,19 +61,16 @@ function AppContent() {
     navigate('/');
   };
 
-  // Görevli paneli için kontrol
-  if (location.pathname === '/gorevli' && !isStaffLoggedIn) {
-    return <StaffLogin onLoginSuccess={handleStaffLoginSuccess} />;
+  // Görevli giriş sayfası kontrolü (önce kontrol edilmeli)
+  if (location.pathname === '/staff-login' || location.pathname === '/gorevli') {
+    if (!isStaffLoggedIn) {
+      return <StaffLogin onLoginSuccess={handleStaffLoginSuccess} />;
+    }
   }
 
   // Normal kullanıcı girişi için kontrol
-  if (!isLoggedIn && location.pathname !== '/gorevli') {
+  if (!isLoggedIn && location.pathname !== '/gorevli' && location.pathname !== '/staff-login') {
     return <ApartmentLogin onLoginSuccess={handleLoginSuccess} />;
-  }
-
-  // Görevli giriş sayfasına yönlendirme için kontrol
-  if (location.pathname === '/staff-login' && !isStaffLoggedIn) {
-    return <StaffLogin onLoginSuccess={handleStaffLoginSuccess} />;
   }
 
   return (
