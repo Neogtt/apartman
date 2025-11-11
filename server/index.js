@@ -1,3 +1,14 @@
+// Deprecation uyarılarını bastır (sadece production'da)
+if (process.env.NODE_ENV === 'production') {
+  const originalEmitWarning = process.emitWarning;
+  process.emitWarning = function(warning, ...args) {
+    if (warning && typeof warning === 'string' && warning.includes('DEP0060')) {
+      return; // util._extend uyarısını bastır
+    }
+    return originalEmitWarning.call(process, warning, ...args);
+  };
+}
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
