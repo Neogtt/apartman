@@ -118,6 +118,17 @@ function ApartmentLogin({ onLoginSuccess }) {
             <li>Giriş yaptıktan sonra daire numaranız otomatik doldurulur</li>
           </ul>
         </div>
+
+        <div className="staff-access-box">
+          <p className="staff-access-text">Görevli misiniz?</p>
+          <button 
+            type="button"
+            onClick={() => window.location.href = '/staff-login'}
+            className="staff-access-button"
+          >
+            🏢 Görevli Paneline Giriş Yap
+          </button>
+        </div>
       </div>
     </div>
   );

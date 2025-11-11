@@ -71,6 +71,11 @@ function AppContent() {
     return <ApartmentLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
+  // Görevli giriş sayfasına yönlendirme için kontrol
+  if (location.pathname === '/staff-login' && !isStaffLoggedIn) {
+    return <StaffLogin onLoginSuccess={handleStaffLoginSuccess} />;
+  }
+
   return (
     <div className="app">
         <div className="sidebar">
@@ -120,6 +125,7 @@ function AppContent() {
           <Route path="/" element={<ApartmentOrder />} />
           <Route path="/siparis-ver" element={<ApartmentOrder />} />
           <Route path="/gorevli" element={<ApartmentManager />} />
+          <Route path="/staff-login" element={<StaffLogin onLoginSuccess={handleStaffLoginSuccess} />} />
         </Routes>
       </div>
     </div>

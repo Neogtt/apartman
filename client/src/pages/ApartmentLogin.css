@@ -143,6 +143,37 @@
   line-height: 1.5;
 }
 
+.staff-access-box {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid #e0e0e0;
+  text-align: center;
+}
+
+.staff-access-text {
+  color: #666;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.staff-access-button {
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.staff-access-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(44, 62, 80, 0.3);
+}
+
 /* Mobil uyumluluk */
 @media (max-width: 768px) {
   .apartment-login-container {
