@@ -11,7 +11,8 @@
     "install-all": "npm install && cd client && npm install",
     "migrate-sheets": "node server/scripts/migrate-to-sheets.js",
     "create-sheets-drive": "node server/scripts/create-sheets-in-drive.js",
-    "setup-sheets": "node server/scripts/setup-existing-sheets.js"
+    "setup-sheets": "node server/scripts/setup-existing-sheets.js",
+    "add-all-apartments": "node server/scripts/add-all-apartments.js"
   },
   "keywords": [
     "apartman",
