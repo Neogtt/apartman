@@ -12,7 +12,8 @@
     "migrate-sheets": "node server/scripts/migrate-to-sheets.js",
     "create-sheets-drive": "node server/scripts/create-sheets-in-drive.js",
     "setup-sheets": "node server/scripts/setup-existing-sheets.js",
-    "add-all-apartments": "node server/scripts/add-all-apartments.js"
+    "add-all-apartments": "node server/scripts/add-all-apartments.js",
+    "create-all-users": "node server/scripts/create-all-users.js"
   },
   "keywords": [
     "apartman",
