@@ -3,12 +3,14 @@ services:
     name: apartman-gorevlisi
     env: node
     plan: free
-    buildCommand: npm install && cd client && npm install && npm run build && cd ..
+    nodeVersion: 20.18.0
+    buildCommand: npm install && cd client && npm install && NODE_OPTIONS=--no-experimental-fetch npm run build && cd ..
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 3002
+      - key: NODE_OPTIONS
+        value: "--no-experimental-fetch"
     healthCheckPath: /api/health
-

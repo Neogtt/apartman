@@ -1,85 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-
-const DATA_FILE = path.join(__dirname, '../../temp/apartment-orders.json');
-const USERS_FILE = path.join(__dirname, '../../temp/apartment-users.json');
-
-// Veri dosyasını başlat
-function initDataFile() {
-  if (!fs.existsSync(DATA_FILE)) {
-    const initialData = {
-      orders: [],
-      apartments: []
-    };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2));
-  }
-}
-
-// Kullanıcı dosyasını başlat
-function initUsersFile() {
-  if (!fs.existsSync(USERS_FILE)) {
-    const initialUsers = {
-      users: []
-    };
-    fs.writeFileSync(USERS_FILE, JSON.stringify(initialUsers, null, 2));
-  }
-}
-
-// Kullanıcı verilerini oku
-function readUsers() {
-  initUsersFile();
-  try {
-    const data = fs.readFileSync(USERS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Kullanıcı okuma hatası:', error);
-    return { users: [] };
-  }
-}
-
-// Kullanıcı verilerine yaz
-function writeUsers(data) {
-  initUsersFile();
-  try {
-    fs.writeFileSync(USERS_FILE, JSON.stringify(data, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Kullanıcı yazma hatası:', error);
-    return false;
-  }
-}
-
-// Veri dosyasını oku
-function readData() {
-  initDataFile();
-  try {
-    const data = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Veri okuma hatası:', error);
-    return { orders: [], apartments: [] };
-  }
-}
-
-// Veri dosyasına yaz
-function writeData(data) {
-  initDataFile();
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Veri yazma hatası:', error);
-    return false;
-  }
-}
+const sheetsService = require('../services/sheetsService');
 
 // Tüm siparişleri getir
-router.get('/orders', (req, res) => {
+router.get('/orders', async (req, res) => {
   try {
-    const data = readData();
+    const data = await sheetsService.readData();
     // Tarihe göre sırala (en yeni önce)
     data.orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     res.json(data.orders);
@@ -89,10 +16,10 @@ router.get('/orders', (req, res) => {
 });
 
 // Belirli bir dairenin siparişlerini getir
-router.get('/orders/apartment/:apartmentNumber', (req, res) => {
+router.get('/orders/apartment/:apartmentNumber', async (req, res) => {
   try {
     const { apartmentNumber } = req.params;
-    const data = readData();
+    const data = await sheetsService.readData();
     const apartmentOrders = data.orders.filter(
       order => order.apartmentNumber === apartmentNumber
     );
@@ -154,7 +81,7 @@ function getOrderTimeInfo() {
 }
 
 // Yeni sipariş ekle
-router.post('/orders', (req, res) => {
+router.post('/orders', async (req, res) => {
   try {
     const { apartmentNumber, orderText, contactInfo, isTrashCollection } = req.body;
     
@@ -171,7 +98,7 @@ router.post('/orders', (req, res) => {
       });
     }
 
-    const data = readData();
+    const data = await sheetsService.readData();
     const newOrder = {
       id: uuidv4(),
       apartmentNumber: apartmentNumber.toString(),
@@ -195,7 +122,8 @@ router.post('/orders', (req, res) => {
       });
     }
 
-    if (writeData(data)) {
+    const success = await sheetsService.writeData(data);
+    if (success) {
       res.status(201).json({
         ...newOrder,
         timeInfo: timeInfo
@@ -219,7 +147,7 @@ router.get('/order-time-info', (req, res) => {
 });
 
 // Kullanıcı kayıt/giriş
-router.post('/auth/login', (req, res) => {
+router.post('/auth/login', async (req, res) => {
   try {
     const { apartmentNumber, password } = req.body;
     
@@ -227,7 +155,7 @@ router.post('/auth/login', (req, res) => {
       return res.status(400).json({ error: 'Daire numarası ve şifre gereklidir' });
     }
 
-    const usersData = readUsers();
+    const usersData = await sheetsService.readUsersData();
     const apartmentKey = apartmentNumber.toString().toUpperCase();
     
     // Kullanıcı var mı kontrol et
@@ -242,7 +170,7 @@ router.post('/auth/login', (req, res) => {
         createdAt: new Date().toISOString()
       };
       usersData.users.push(user);
-      writeUsers(usersData);
+      await sheetsService.writeUsersData(usersData);
     } else {
       // Şifre kontrolü
       if (user.password !== password) {
@@ -317,7 +245,7 @@ router.post('/auth/staff-login', (req, res) => {
 });
 
 // Sipariş durumunu güncelle
-router.patch('/orders/:id', (req, res) => {
+router.patch('/orders/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -326,7 +254,7 @@ router.patch('/orders/:id', (req, res) => {
       return res.status(400).json({ error: 'Geçerli bir durum gereklidir (pending, completed, cancelled)' });
     }
 
-    const data = readData();
+    const data = await sheetsService.readData();
     const orderIndex = data.orders.findIndex(order => order.id === id);
 
     if (orderIndex === -1) {
@@ -336,7 +264,8 @@ router.patch('/orders/:id', (req, res) => {
     data.orders[orderIndex].status = status;
     data.orders[orderIndex].updatedAt = new Date().toISOString();
 
-    if (writeData(data)) {
+    const success = await sheetsService.writeData(data);
+    if (success) {
       res.json(data.orders[orderIndex]);
     } else {
       res.status(500).json({ error: 'Sipariş güncellenemedi' });
@@ -347,10 +276,10 @@ router.patch('/orders/:id', (req, res) => {
 });
 
 // Sipariş sil
-router.delete('/orders/:id', (req, res) => {
+router.delete('/orders/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const data = readData();
+    const data = await sheetsService.readData();
     const orderIndex = data.orders.findIndex(order => order.id === id);
 
     if (orderIndex === -1) {
@@ -359,7 +288,8 @@ router.delete('/orders/:id', (req, res) => {
 
     data.orders.splice(orderIndex, 1);
 
-    if (writeData(data)) {
+    const success = await sheetsService.writeData(data);
+    if (success) {
       res.json({ message: 'Sipariş silindi' });
     } else {
       res.status(500).json({ error: 'Sipariş silinemedi' });
@@ -370,9 +300,9 @@ router.delete('/orders/:id', (req, res) => {
 });
 
 // Tüm daireleri getir
-router.get('/apartments', (req, res) => {
+router.get('/apartments', async (req, res) => {
   try {
-    const data = readData();
+    const data = await sheetsService.readData();
     res.json(data.apartments);
   } catch (error) {
     res.status(500).json({ error: 'Daireler getirilemedi', details: error.message });
@@ -380,9 +310,9 @@ router.get('/apartments', (req, res) => {
 });
 
 // İstatistikler
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
-    const data = readData();
+    const data = await sheetsService.readData();
     const stats = {
       totalOrders: data.orders.length,
       pendingOrders: data.orders.filter(o => o.status === 'pending').length,

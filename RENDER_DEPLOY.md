@@ -6,6 +6,8 @@ Bu doküman, Apartman Görevlisi uygulamasını Render.com'da deploy etmek için
 
 1. GitHub hesabı (kodunuz GitHub'da olmalı)
 2. Render.com hesabı (ücretsiz kayıt: https://render.com)
+3. Google Service Account JSON dosyası
+4. Google Sheets dosyası oluşturulmuş olmalı
 
 ## 🎯 Adım Adım Deploy
 
@@ -44,13 +46,41 @@ Aşağıdaki ayarları yapın:
   npm start
   ```
 
-#### Environment Variables
-Aşağıdaki environment variable'ları ekleyin:
+#### Environment Variables (ÖNEMLİ! ⚠️)
 
-```
-NODE_ENV=production
-PORT=3002
-```
+**Zorunlu Environment Variables:**
+
+1. **GOOGLE_SERVICE_ACCOUNT**:
+   - Service Account JSON dosyasının **tam içeriğini** buraya yapıştırın
+   - Tek satır olarak, tırnak işaretleri dahil
+   - Örnek format:
+     ```
+     {"type":"service_account","project_id":"apartman-478214","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"apartman@apartman-478214.iam.gserviceaccount.com",...}
+     ```
+
+2. **GOOGLE_SPREADSHEET_ID**:
+   - Google Sheets dosyanızın ID'si
+   - Örnek: `1USqMZ7nRtrfN7pUSt100W9UI97ytFmM-UB41M3mO70c`
+
+3. **NODE_ENV**:
+   - Değer: `production`
+
+4. **PORT**:
+   - Değer: Render otomatik atar, ancak `3002` yazabilirsiniz
+
+**Environment Variables Nasıl Eklenecek:**
+
+1. Render Dashboard → Your Service → **Environment** sekmesine gidin
+2. **"Add Environment Variable"** butonuna tıklayın
+3. Her bir variable'ı tek tek ekleyin:
+   - Key: `GOOGLE_SERVICE_ACCOUNT`
+   - Value: JSON dosyasının tam içeriği (tek satır)
+
+⚠️ **ÖNEMLİ NOTLAR:**
+- `GOOGLE_SERVICE_ACCOUNT` değeri çok uzun olacak (JSON string)
+- Tırnak işaretlerini kaldırmayın, olduğu gibi yapıştırın
+- `\n` karakterleri JSON içinde olmalı (private key için)
+- Render'ın text area'ında tam olarak görünmeyebilir ama sorun değil
 
 ### 4. Plan Seçimi
 
@@ -72,6 +102,7 @@ Deploy işlemi yaklaşık 5-10 dakika sürebilir. Logları takip edebilirsiniz:
 
 - ✅ Build başarılı olursa yeşil tick görürsünüz
 - ❌ Hata olursa logları kontrol edin
+- Log'larda "Google Sheets API başarıyla başlatıldı" mesajını görmelisiniz
 
 ### 7. Uygulama URL'i
 
@@ -79,22 +110,49 @@ Deploy tamamlandıktan sonra:
 - Render size bir URL verecek: `https://apartman-gorevlisi.onrender.com` (veya benzeri)
 - Bu URL'den uygulamanıza erişebilirsiniz
 
+## ✅ Deploy Sonrası Kontroller
+
+### 1. Log Kontrolü
+
+Render Dashboard → Your Service → **Logs** sekmesine gidin ve şunu kontrol edin:
+
+```
+✅ Google Sheets API başarıyla başlatıldı
+🚀 Apartman Görevlisi Server çalışıyor: http://localhost:3002
+```
+
+### 2. Health Check
+
+Tarayıcınızda şu URL'yi açın:
+```
+https://your-service-name.onrender.com/api/health
+```
+
+Şu cevabı görmelisiniz:
+```json
+{"status":"ok","message":"Apartman Görevlisi API is running"}
+```
+
+### 3. Google Sheets Kontrolü
+
+1. Google Sheets dosyanızı açın
+2. Yeni bir sipariş verin (uygulamadan)
+3. Sheets'te verinin göründüğünü kontrol edin
+
 ## 🔧 Önemli Notlar
 
-### Veri Depolama
+### Veri Depolama ✅
 
-⚠️ **ÖNEMLİ**: Render'ın free plan'ında disk storage geçicidir. Uygulama yeniden başlatıldığında veriler kaybolabilir.
-
-**Çözüm seçenekleri:**
-1. **Render Disk** (ücretli): Kalıcı storage için
-2. **External Database**: MongoDB, PostgreSQL gibi
-3. **Cloud Storage**: AWS S3, Google Cloud Storage
+✅ **Çözüldü!**: Artık Google Sheets kullanıyoruz, veriler bulutta saklanıyor.
+- Render'ın free plan'ında bile veriler kalıcı
+- Tüm cihazlardan aynı verilere erişim
+- Otomatik yedekleme (Google Sheets)
 
 ### Environment Variables
 
 Production'da güvenlik için:
-- Görevli şifrelerini environment variable olarak saklayın
-- API key'leri environment variable olarak kullanın
+- Service Account JSON'u environment variable olarak saklıyoruz (güvenli)
+- Şifreler Google Sheets'te saklanıyor (production'da hash'lenmeli)
 
 ### Custom Domain (Opsiyonel)
 
@@ -104,13 +162,9 @@ Production'da güvenlik için:
 
 ## 📝 render.yaml Kullanımı (Alternatif)
 
-Eğer `render.yaml` dosyasını kullanmak isterseniz:
+⚠️ **ÖNEMLİ**: `render.yaml` dosyasında environment variables eklemek **GÜVENLİ DEĞİLDİR** çünkü dosya Git'te public olabilir.
 
-1. Repository'nize `render.yaml` dosyasını ekleyin (zaten ekli)
-2. Render Dashboard'da:
-   - "New +" → "Blueprint"
-   - Repository'nizi seçin
-   - Render otomatik olarak `render.yaml` dosyasını okuyacak
+**Yerine:** Render Dashboard'dan manuel olarak ekleyin.
 
 ## 🐛 Sorun Giderme
 
@@ -122,19 +176,21 @@ Eğer `render.yaml` dosyasını kullanmak isterseniz:
 - `package.json` dosyasındaki script'leri kontrol edin
 - Node.js versiyonunu kontrol edin (18+ gerekli)
 
+### Google Sheets Bağlantı Hatası
+
+**Problem**: "Google Sheets API başlatılamadı" hatası
+**Çözüm**: 
+- `GOOGLE_SERVICE_ACCOUNT` environment variable'ını kontrol edin
+- JSON formatının doğru olduğundan emin olun
+- `GOOGLE_SPREADSHEET_ID` değerini kontrol edin
+- Service Account'un Sheets dosyasına erişim izni olduğundan emin olun
+
 ### Port Hatası
 
 **Problem**: "Port already in use" hatası
 **Çözüm**: 
 - `PORT` environment variable'ını Render'ın otomatik atadığı port'a bırakın
 - Veya `process.env.PORT` kullanın (zaten kullanılıyor)
-
-### Veri Kaybı
-
-**Problem**: Uygulama yeniden başladığında veriler kayboluyor
-**Çözüm**: 
-- Render Disk kullanın (ücretli)
-- Veya external database kullanın
 
 ### Uygulama Uyuyor
 
@@ -145,9 +201,9 @@ Eğer `render.yaml` dosyasını kullanmak isterseniz:
 
 ## 🔒 Güvenlik
 
-1. **Environment Variables**: Hassas bilgileri environment variable olarak saklayın
-2. **HTTPS**: Render otomatik HTTPS sağlar
-3. **Şifreler**: Production'da şifreleri hash'leyin (şu an basit şifre kullanılıyor)
+1. **Environment Variables**: Service Account JSON'u environment variable olarak saklıyoruz ✅
+2. **HTTPS**: Render otomatik HTTPS sağlar ✅
+3. **Şifreler**: Production'da şifreleri hash'leyin (gelecek güncelleme)
 
 ## 📊 Monitoring
 
@@ -160,13 +216,14 @@ Render Dashboard'da:
 
 ```bash
 # 1. GitHub'da repository hazır (✓)
-# 2. Render.com'a git
+# 2. Google Sheets kurulumu tamamlandı (✓)
+# 3. Render.com'a git
 https://dashboard.render.com
 
-# 3. New Web Service
-# 4. GitHub repo'yu bağla
-# 5. Ayarları yukarıdaki gibi yap
-# 6. Deploy!
+# 4. New Web Service
+# 5. GitHub repo'yu bağla
+# 6. Environment Variables ekle (YUKARIDAKİ GİBİ)
+# 7. Deploy!
 ```
 
 ## 📞 Destek
@@ -178,3 +235,4 @@ https://dashboard.render.com
 
 **Başarılar! 🎉**
 
+Artık verileriniz Google Sheets'te, tüm cihazlardan erişilebilir! 🚀

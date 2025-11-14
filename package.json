@@ -8,7 +8,10 @@
     "dev": "nodemon server/index.js",
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
-    "install-all": "npm install && cd client && npm install"
+    "install-all": "npm install && cd client && npm install",
+    "migrate-sheets": "node server/scripts/migrate-to-sheets.js",
+    "create-sheets-drive": "node server/scripts/create-sheets-in-drive.js",
+    "setup-sheets": "node server/scripts/setup-existing-sheets.js"
   },
   "keywords": [
     "apartman",
@@ -18,13 +21,15 @@
   "author": "",
   "license": "ISC",
   "engines": {
-    "node": ">=18.0.0",
+    "node": "20.18.0",
     "npm": ">=9.0.0"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.18.2",
+    "googleapis": "^144.0.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
