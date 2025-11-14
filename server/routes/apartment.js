@@ -190,24 +190,43 @@ router.post('/auth/login', async (req, res) => {
   }
 });
 
-// Blok ve daire listesi
-router.get('/blocks', (req, res) => {
+// Blok ve daire listesi - Sadece kayıtlı daireleri göster
+router.get('/blocks', async (req, res) => {
   try {
-    const blocks = ['A', 'B', 'C'];
-    const apartmentsPerBlock = 10;
-    const apartments = [];
+    // Google Sheets'ten kayıtlı kullanıcıları (daireleri) çek
+    const usersData = await sheetsService.readUsersData();
+    const apartmentsData = await sheetsService.readData();
     
-    blocks.forEach(block => {
-      for (let i = 1; i <= apartmentsPerBlock; i++) {
-        apartments.push({
-          value: `${block}${i}`,
-          label: `${block} Blok - Daire ${i}`
-        });
-      }
+    // Tüm kayıtlı daireleri birleştir (users ve apartments)
+    const registeredApartments = new Set();
+    
+    // Users'dan daireleri ekle
+    usersData.users.forEach(user => {
+      registeredApartments.add(user.apartmentNumber.toUpperCase());
     });
+    
+    // Apartments'dan daireleri ekle
+    apartmentsData.apartments.forEach(apt => {
+      registeredApartments.add(apt.number.toUpperCase());
+    });
+    
+    // Daire listesini formatla
+    const apartments = Array.from(registeredApartments)
+      .sort() // Alfabetik sırala (A1, A2, A5, B1, vb.)
+      .map(aptNumber => {
+        // Daire numarasından blok ve daire numarasını çıkar (örn: A5 -> A blok, 5. daire)
+        const block = aptNumber.charAt(0);
+        const number = aptNumber.substring(1);
+        
+        return {
+          value: aptNumber,
+          label: `${block} Blok - Daire ${number}`
+        };
+      });
     
     res.json(apartments);
   } catch (error) {
+    console.error('Bloklar getirilemedi:', error);
     res.status(500).json({ error: 'Bloklar getirilemedi', details: error.message });
   }
 });
