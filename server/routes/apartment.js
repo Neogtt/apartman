@@ -190,36 +190,33 @@ router.post('/auth/login', async (req, res) => {
   }
 });
 
-// Blok ve daire listesi - Sadece kayıtlı daireleri göster
+// Blok ve daire listesi - Google Sheets'teki tüm daireleri göster
 router.get('/blocks', async (req, res) => {
   try {
-    // Google Sheets'ten kayıtlı kullanıcıları (daireleri) çek
-    const usersData = await sheetsService.readUsersData();
+    // Google Sheets'ten tüm daireleri çek
     const apartmentsData = await sheetsService.readData();
     
-    // Tüm kayıtlı daireleri birleştir (users ve apartments)
-    const registeredApartments = new Set();
-    
-    // Users'dan daireleri ekle
-    usersData.users.forEach(user => {
-      registeredApartments.add(user.apartmentNumber.toUpperCase());
-    });
-    
-    // Apartments'dan daireleri ekle
-    apartmentsData.apartments.forEach(apt => {
-      registeredApartments.add(apt.number.toUpperCase());
-    });
-    
-    // Daire listesini formatla
-    const apartments = Array.from(registeredApartments)
-      .sort() // Alfabetik sırala (A1, A2, A5, B1, vb.)
-      .map(aptNumber => {
+    // Tüm daireleri formatla
+    const apartments = apartmentsData.apartments
+      .sort((a, b) => {
+        // Alfabetik ve sayısal sıralama (A1, A2, A10, B1, vb.)
+        const aBlock = a.number.charAt(0);
+        const bBlock = b.number.charAt(0);
+        const aNum = parseInt(a.number.substring(1)) || 0;
+        const bNum = parseInt(b.number.substring(1)) || 0;
+        
+        if (aBlock !== bBlock) {
+          return aBlock.localeCompare(bBlock);
+        }
+        return aNum - bNum;
+      })
+      .map(apt => {
         // Daire numarasından blok ve daire numarasını çıkar (örn: A5 -> A blok, 5. daire)
-        const block = aptNumber.charAt(0);
-        const number = aptNumber.substring(1);
+        const block = apt.number.charAt(0);
+        const number = apt.number.substring(1);
         
         return {
-          value: aptNumber,
+          value: apt.number.toUpperCase(),
           label: `${block} Blok - Daire ${number}`
         };
       });
