@@ -219,7 +219,7 @@ router.get('/blocks', async (req, res) => {
           value: apt.number.toUpperCase(),
           label: `${block} Blok - Daire ${number}`
         };
-      });
+    });
     
     res.json(apartments);
   } catch (error) {
