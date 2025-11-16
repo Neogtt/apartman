@@ -16,9 +16,17 @@ function ApartmentLogin({ onLoginSuccess }) {
   const loadBlocks = async () => {
     try {
       const response = await getBlocks();
-      setBlocks(response.data || []);
+      console.log('📋 Blocks response:', response.data);
+      if (response.data && response.data.length > 0) {
+        setBlocks(response.data);
+      } else {
+        console.warn('⚠️  Blocks listesi boş geldi');
+        setError('Daire listesi yüklenemedi. Lütfen sayfayı yenileyin.');
+      }
     } catch (error) {
-      console.error('Bloklar yüklenemedi:', error);
+      console.error('❌ Bloklar yüklenemedi:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      setError('Daire listesi yüklenirken bir hata oluştu: ' + (error.response?.data?.error || error.message));
     }
   };
 
