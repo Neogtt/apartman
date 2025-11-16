@@ -14,6 +14,25 @@ dist/
 .env.production.local
 RENDER_ENV_VALUES.txt
 
+# Service Account JSON files (GÜVENLİK - ASLA COMMIT ETMEYİN!)
+*.json
+!package.json
+!package-lock.json
+!client/package.json
+!client/package-lock.json
+apartman-*.json
+*-*.json
+!render.yaml
+
+# Test and temporary scripts
+test-*.js
+update-env*.js
+
+# IDE and workspace files
+*.code-workspace
+.vscode/
+.idea/
+
 # Logs
 *.log
 npm-debug.log*
