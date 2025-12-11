@@ -9,6 +9,11 @@ import { format } from 'date-fns';
 import './ApartmentManager.css';
 
 function ApartmentManager() {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
+  const [filter, setFilter] = useState('all'); // all, pending, completed
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [price, setPrice] = useState('');
   const [isPaid, setIsPaid] = useState(true);
