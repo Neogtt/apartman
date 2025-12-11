@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createApartmentOrder, getOrderTimeInfo } from '../utils/api';
+import { createApartmentOrder, getOrderTimeInfo, getApartmentOrdersByNumber } from '../utils/api';
+import { format } from 'date-fns';
 import './ApartmentOrder.css';
 
 function ApartmentOrder() {
@@ -13,6 +14,8 @@ function ApartmentOrder() {
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState(null);
   const [timeInfo, setTimeInfo] = useState(null);
+  const [myOrders, setMyOrders] = useState([]);
+  const [totalDebt, setTotalDebt] = useState(0);
 
   // Kullanıcı giriş yaptıysa daire numarasını otomatik doldur ve saat bilgisini al
   useEffect(() => {
@@ -33,6 +36,35 @@ function ApartmentOrder() {
     return () => clearInterval(timeInterval);
   }, []);
 
+  useEffect(() => {
+    if (apartmentNumber) {
+      loadMyOrders();
+    } else {
+      setMyOrders([]);
+      setTotalDebt(0);
+    }
+  }, [apartmentNumber]);
+
+  const loadMyOrders = async () => {
+    if (!apartmentNumber) return;
+    try {
+      const response = await getApartmentOrdersByNumber(apartmentNumber);
+      const orders = response.data || [];
+      setMyOrders(orders);
+
+      // Borç hesapla (Tamamlanmış ama ödenmemiş siparişler)
+      const debt = orders.reduce((total, order) => {
+        if (order.status === 'completed' && order.price && !order.isPaid) {
+          return total + parseFloat(order.price);
+        }
+        return total;
+      }, 0);
+      setTotalDebt(debt);
+    } catch (err) {
+      console.error('Sipariş geçmişi yüklenemedi:', err);
+    }
+  };
+
   const loadTimeInfo = async () => {
     try {
       const response = await getOrderTimeInfo();
@@ -48,7 +80,7 @@ function ApartmentOrder() {
       try {
         // Tarayıcı kontrolü
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        
+
         if (!SpeechRecognition) {
           console.warn('Bu tarayıcı ses tanımayı desteklemiyor');
           return;
@@ -75,10 +107,10 @@ function ApartmentOrder() {
         recognitionInstance.onerror = (event) => {
           console.error('Ses tanıma hatası:', event.error);
           setIsListening(false);
-          
+
           let errorMessage = 'Ses tanıma hatası oluştu.';
-          
-          switch(event.error) {
+
+          switch (event.error) {
             case 'no-speech':
               errorMessage = 'Konuşma algılanamadı. Lütfen tekrar deneyin ve net konuşun.';
               break;
@@ -100,7 +132,7 @@ function ApartmentOrder() {
             default:
               errorMessage = `Ses tanıma hatası: ${event.error}. Chrome veya Edge tarayıcısını kullanmayı deneyin.`;
           }
-          
+
           setError(errorMessage);
           setTimeout(() => setError(''), 5000);
         };
@@ -144,12 +176,12 @@ function ApartmentOrder() {
         contactInfo: contactInfo.trim(),
         isTrashCollection: isTrashCollection
       });
-      
+
       // Saat bilgisini güncelle
       if (response.data.timeInfo) {
         setTimeInfo(response.data.timeInfo);
       }
-      
+
       setSuccess(true);
       // Daire numarasını sadece giriş yapılmamışsa temizle
       const savedUser = localStorage.getItem('apartmentUser');
@@ -159,7 +191,10 @@ function ApartmentOrder() {
       setOrderText('');
       setContactInfo('');
       setIsTrashCollection(false);
-      
+
+      // Listeyi güncelle
+      loadMyOrders();
+
       // Başarı mesajını 5 saniye sonra kaldır
       setTimeout(() => setSuccess(false), 5000);
     } catch (err) {
@@ -208,7 +243,7 @@ function ApartmentOrder() {
         <p className="subtitle">İhtiyaçlarınızı buradan görevliye iletebilirsiniz</p>
 
         {timeInfo && (
-          <div className={`time-info-box ${timeInfo.canOrder ? 'time-info-open' : 'time-info-closed'}`}>
+          <div className={`time - info - box ${timeInfo.canOrder ? 'time-info-open' : 'time-info-closed'} `}>
             <div className="time-info-header">
               <span className="time-icon">🕐</span>
               <span className="current-time">{timeInfo.currentTime} (GMT+3)</span>
@@ -220,9 +255,19 @@ function ApartmentOrder() {
           </div>
         )}
 
+        {totalDebt > 0 && (
+          <div className="debt-alert">
+            <span className="debt-icon">💰</span>
+            <div className="debt-info">
+              <h3>Toplam Borcunuz: {totalDebt} TL</h3>
+              <p>Ödenmemiş tamalanan siparişleriniz bulunmaktadır. Lütfen görevliye ödeme yapınız.</p>
+            </div>
+          </div>
+        )}
+
         {success && (
           <div className="alert alert-success">
-            ✅ Siparişiniz başarıyla gönderildi! 
+            ✅ Siparişiniz başarıyla gönderildi!
             {timeInfo && timeInfo.message && (
               <div style={{ marginTop: '10px', fontSize: '0.9rem' }}>
                 📌 {timeInfo.message}
@@ -252,6 +297,7 @@ function ApartmentOrder() {
               required
               disabled={loading || !!localStorage.getItem('apartmentUser')}
               className={localStorage.getItem('apartmentUser') ? 'disabled-input' : ''}
+              onBlur={loadMyOrders}
             />
             {localStorage.getItem('apartmentUser') && (
               <small className="form-hint">Daire numaranız giriş yaptığınız bilgilerden alınmıştır</small>
@@ -276,7 +322,7 @@ function ApartmentOrder() {
                 type="button"
                 onClick={handleStartListening}
                 disabled={loading || !recognition}
-                className={`voice-button ${isListening ? 'listening' : ''}`}
+                className={`voice - button ${isListening ? 'listening' : ''} `}
                 title={isListening ? 'Dinlemeyi durdurmak için tıklayın' : 'Sesli giriş için tıklayın'}
               >
                 {isListening ? '🛑' : '🎤'}
@@ -325,14 +371,45 @@ function ApartmentOrder() {
             </small>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="submit-button"
             disabled={loading || (timeInfo && !timeInfo.canOrder)}
           >
             {loading ? 'Gönderiliyor...' : (timeInfo && !timeInfo.canOrder) ? '⏰ Sipariş Saatleri Dışı' : '📤 Siparişi Gönder'}
           </button>
         </form>
+
+        {myOrders.length > 0 && (
+          <div className="my-orders-section">
+            <h3>📋 Geçmiş Siparişleriniz</h3>
+            <div className="my-orders-list">
+              {myOrders.slice(0, 5).map(order => (
+                <div key={order.id} className={`my - order - item status - ${order.status} ${!order.isPaid && order.status === 'completed' && order.price ? 'unpaid' : ''} `}>
+                  <div className="my-order-header">
+                    <span className="my-order-date">{format(new Date(order.createdAt), 'dd.MM HH:mm')}</span>
+                    <span className="my-order-status">
+                      {order.status === 'pending' ? '⏳ Bekliyor' :
+                        order.status === 'completed' ? '✅ Tamamlandı' : '❌ İptal'}
+                    </span>
+                  </div>
+                  <div className="my-order-text">{order.orderText}</div>
+                  {order.status === 'completed' && order.price && (
+                    <div className="my-order-price">
+                      <span>{order.price} TL</span>
+                      <span className={order.isPaid ? 'paid-tag' : 'unpaid-tag'}>
+                        {order.isPaid ? 'Ödendi' : 'Borç'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {myOrders.length > 5 && (
+                <div className="more-orders">... ve {myOrders.length - 5} sipariş daha</div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="info-box">
           <h3>ℹ️ Bilgi</h3>

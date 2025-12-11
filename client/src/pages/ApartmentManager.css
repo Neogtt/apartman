@@ -383,3 +383,135 @@
   }
 }
 
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+  text-align: center;
+}
+
+.modal-content .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  text-align: left;
+}
+
+.modal-content .form-group input[type="number"] {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.modal-content .checkbox-group {
+  display: flex;
+  align-items: center;
+  margin: 1rem 0;
+  justify-content: flex-start;
+}
+
+.modal-content .checkbox-group input {
+  margin-right: 10px;
+  width: 20px;
+  height: 20px;
+}
+
+.debt-warning {
+  color: #c0392b;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: #fbeee6;
+  border-left: 3px solid #c0392b;
+  border-radius: 4px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  transition: all 0.2s;
+}
+
+.submit-button {
+  background-color: #27ae60;
+  color: white;
+}
+
+.submit-button:hover {
+  background-color: #219150;
+}
+
+.cancel-button {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: #7f8c8d;
+}
+
+/* Payment Info Badge */
+.payment-info {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.payment-paid {
+  background-color: #e8f8f5;
+  color: #27ae60;
+  border: 1px solid #d1f2eb;
+}
+
+.payment-debt {
+  background-color: #fdedec;
+  color: #c0392b;
+  border: 1px solid #fadbd8;
+}
+
+.payment-amount {
+  font-weight: bold;
+}

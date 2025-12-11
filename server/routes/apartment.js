@@ -34,7 +34,7 @@ router.get('/orders/apartment/:apartmentNumber', async (req, res) => {
 function getOrderTimeInfo() {
   // GMT+3 saat dilimi
   const now = new Date();
-  const gmt3Time = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Istanbul"}));
+  const gmt3Time = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Istanbul" }));
   const hours = gmt3Time.getHours();
   const minutes = gmt3Time.getMinutes();
   const currentTime = hours * 60 + minutes; // Dakika cinsinden
@@ -84,7 +84,7 @@ function getOrderTimeInfo() {
 router.post('/orders', async (req, res) => {
   try {
     const { apartmentNumber, orderText, contactInfo, isTrashCollection } = req.body;
-    
+
     if (!apartmentNumber || !orderText) {
       return res.status(400).json({ error: 'Daire numarası ve sipariş metni gereklidir' });
     }
@@ -92,7 +92,7 @@ router.post('/orders', async (req, res) => {
     // Sipariş saat kontrolü
     const timeInfo = getOrderTimeInfo();
     if (!timeInfo.canOrder) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: timeInfo.message,
         timeInfo: timeInfo
       });
@@ -113,7 +113,7 @@ router.post('/orders', async (req, res) => {
     };
 
     data.orders.push(newOrder);
-    
+
     // Daire listesine ekle (yoksa)
     if (!data.apartments.find(apt => apt.number === apartmentNumber.toString())) {
       data.apartments.push({
@@ -150,17 +150,17 @@ router.get('/order-time-info', (req, res) => {
 router.post('/auth/login', async (req, res) => {
   try {
     const { apartmentNumber, password } = req.body;
-    
+
     if (!apartmentNumber || !password) {
       return res.status(400).json({ error: 'Daire numarası ve şifre gereklidir' });
     }
 
     const usersData = await sheetsService.readUsersData();
     const apartmentKey = apartmentNumber.toString().toUpperCase();
-    
+
     // Kullanıcı var mı kontrol et
     let user = usersData.users.find(u => u.apartmentNumber === apartmentKey);
-    
+
     if (!user) {
       // Yeni kullanıcı oluştur
       user = {
@@ -195,7 +195,7 @@ router.get('/blocks', async (req, res) => {
   try {
     // Google Sheets'ten tüm daireleri çek
     const apartmentsData = await sheetsService.readData();
-    
+
     // Tüm daireleri formatla
     const apartments = apartmentsData.apartments
       .sort((a, b) => {
@@ -204,7 +204,7 @@ router.get('/blocks', async (req, res) => {
         const bBlock = b.number.charAt(0);
         const aNum = parseInt(a.number.substring(1)) || 0;
         const bNum = parseInt(b.number.substring(1)) || 0;
-        
+
         if (aBlock !== bBlock) {
           return aBlock.localeCompare(bBlock);
         }
@@ -214,13 +214,13 @@ router.get('/blocks', async (req, res) => {
         // Daire numarasından blok ve daire numarasını çıkar (örn: A5 -> A blok, 5. daire)
         const block = apt.number.charAt(0);
         const number = apt.number.substring(1);
-        
+
         return {
           value: apt.number.toUpperCase(),
           label: `${block} Blok - Daire ${number}`
         };
-    });
-    
+      });
+
     res.json(apartments);
   } catch (error) {
     console.error('Bloklar getirilemedi:', error);
@@ -232,7 +232,7 @@ router.get('/blocks', async (req, res) => {
 router.post('/auth/staff-login', (req, res) => {
   try {
     const { username, password } = req.body;
-    
+
     if (!username || !password) {
       return res.status(400).json({ error: 'Kullanıcı adı ve şifre gereklidir' });
     }
@@ -264,7 +264,7 @@ router.post('/auth/staff-login', (req, res) => {
 router.patch('/orders/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, price, isPaid } = req.body;
 
     if (!status || !['pending', 'completed', 'cancelled'].includes(status)) {
       return res.status(400).json({ error: 'Geçerli bir durum gereklidir (pending, completed, cancelled)' });
@@ -277,7 +277,13 @@ router.patch('/orders/:id', async (req, res) => {
       return res.status(404).json({ error: 'Sipariş bulunamadı' });
     }
 
+    // Durum güncelleme
     data.orders[orderIndex].status = status;
+
+    // Fiyat ve Ödeme durumu güncelleme (eğer geldiyse)
+    if (price !== undefined) data.orders[orderIndex].price = price;
+    if (isPaid !== undefined) data.orders[orderIndex].isPaid = isPaid;
+
     data.orders[orderIndex].updatedAt = new Date().toISOString();
 
     const success = await sheetsService.writeData(data);

@@ -121,7 +121,7 @@ async function ensureInitialized() {
       await initSheet(SHEETS.ORDERS, [
         'id', 'apartmentNumber', 'orderText', 'contactInfo', 
         'isTrashCollection', 'orderType', 'orderTimeMessage', 
-        'status', 'createdAt', 'updatedAt'
+        'status', 'createdAt', 'updatedAt', 'price', 'isPaid'
       ]);
       await initSheet(SHEETS.APARTMENTS, ['number', 'contactInfo']);
       await initSheet(SHEETS.USERS, ['id', 'apartmentNumber', 'password', 'createdAt']);
@@ -140,7 +140,7 @@ async function readOrders() {
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
-      range: `${SHEETS.ORDERS}!A2:J1000`, // J sütunu updatedAt için
+      range: `${SHEETS.ORDERS}!A2:L1000`, // L sütunu isPaid için
     });
 
     const rows = response.data.values || [];
@@ -157,6 +157,8 @@ async function readOrders() {
         status: row[7] || 'pending',
         createdAt: row[8] || '',
         updatedAt: row[9] || '',
+        price: row[10] || '', // Fiyat
+        isPaid: row[11] === 'TRUE' || row[11] === true, // Ödendi mi?
       }));
 
     // Apartments'ı da oku
@@ -234,7 +236,7 @@ async function writeOrders(data) {
     // Önce mevcut verileri temizle (başlık hariç)
     await sheets.spreadsheets.values.clear({
       spreadsheetId: spreadsheetId,
-      range: `${SHEETS.ORDERS}!A2:J1000`,
+      range: `${SHEETS.ORDERS}!A2:L1000`,
     });
 
     // Yeni verileri ekle
@@ -249,6 +251,8 @@ async function writeOrders(data) {
       order.status,
       order.createdAt,
       order.updatedAt,
+      order.price || '',
+      order.isPaid ? 'TRUE' : 'FALSE',
     ]);
 
     if (values.length > 0) {

@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // Production'da relative path kullan (aynı domain'de), development'ta localhost
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api' 
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? '/api'
   : (process.env.REACT_APP_API_URL || 'http://localhost:3002/api');
 
 const api = axios.create({
@@ -16,7 +16,11 @@ const api = axios.create({
 export const getApartmentOrders = () => api.get('/apartment/orders');
 export const getApartmentOrdersByNumber = (apartmentNumber) => api.get(`/apartment/orders/apartment/${apartmentNumber}`);
 export const createApartmentOrder = (data) => api.post('/apartment/orders', data);
-export const updateApartmentOrderStatus = (id, status) => api.patch(`/apartment/orders/${id}`, { status });
+// Status can be string (old usage) or object (new usage)
+export const updateApartmentOrderStatus = (id, data) => {
+  const payload = typeof data === 'string' ? { status: data } : data;
+  return api.patch(`/apartment/orders/${id}`, payload);
+};
 export const deleteApartmentOrder = (id) => api.delete(`/apartment/orders/${id}`);
 export const getApartments = () => api.get('/apartment/apartments');
 export const getApartmentStats = () => api.get('/apartment/stats');
