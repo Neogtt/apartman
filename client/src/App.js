@@ -16,7 +16,7 @@ function AppContent() {
   useEffect(() => {
     const savedUser = localStorage.getItem('apartmentUser');
     const savedStaff = localStorage.getItem('staffUser');
-    
+
     if (savedUser) {
       try {
         const user = JSON.parse(savedUser);
@@ -75,48 +75,81 @@ function AppContent() {
 
   return (
     <div className="app">
-        <div className="sidebar">
-          <h2>🏢 Apartman Görevlisi</h2>
-          <div className="user-info">
-            {isStaffLoggedIn ? (
-              <>
-                <p>👤 Görevli</p>
-                <button onClick={handleStaffLogout} className="logout-button">
-                  Çıkış Yap
-                </button>
-              </>
-            ) : (
-              <>
-                <p>🏠 {apartmentNumber}</p>
-                <button onClick={handleLogout} className="logout-button">
-                  Çıkış Yap
-                </button>
-              </>
-            )}
-          </div>
-          <ul className="sidebar-menu">
-            {!isStaffLoggedIn && (
-              <li>
-                <NavLink
-                  to="/siparis-ver"
-                  className={({ isActive }) => (isActive ? 'active' : '')}
-                >
-                  🏠 Sipariş Ver
-                </NavLink>
-              </li>
-            )}
-            {isStaffLoggedIn && (
-              <li>
-                <NavLink
-                  to="/gorevli"
-                  className={({ isActive }) => (isActive ? 'active' : '')}
-                >
-                  🏢 Görevli Paneli
-                </NavLink>
-              </li>
-            )}
-          </ul>
+      <div className="sidebar">
+        <h2>🏢 Apartman Görevlisi</h2>
+        <div className="user-info">
+          {isStaffLoggedIn ? (
+            <>
+              <p>👤 Görevli</p>
+              <button onClick={handleStaffLogout} className="logout-button">
+                Çıkış Yap
+              </button>
+            </>
+          ) : (
+            <>
+              <p>🏠 {apartmentNumber}</p>
+              <button onClick={handleLogout} className="logout-button">
+                Çıkış Yap
+              </button>
+            </>
+          )}
         </div>
+        <ul className="sidebar-menu">
+          {!isStaffLoggedIn && (
+            <li>
+              <NavLink
+                to="/siparis-ver"
+                className={({ isActive }) => (isActive ? 'active' : '')}
+              >
+                🏠 Sipariş Ver
+              </NavLink>
+            </li>
+          )}
+          {isStaffLoggedIn && (
+            <li>
+              <NavLink
+                to="/gorevli"
+                className={({ isActive }) => (isActive ? 'active' : '')}
+              >
+                🏢 Görevli Paneli
+              </NavLink>
+            </li>
+          )}
+        </ul>
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="bottom-nav">
+        {!isStaffLoggedIn && (
+          <NavLink
+            to="/siparis-ver"
+            className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
+          >
+            <span className="nav-icon">🏠</span>
+            <span className="nav-text">Sipariş</span>
+          </NavLink>
+        )}
+        {isStaffLoggedIn && (
+          <NavLink
+            to="/gorevli"
+            className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
+          >
+            <span className="nav-icon">🏢</span>
+            <span className="nav-text">Panel</span>
+          </NavLink>
+        )}
+        {isStaffLoggedIn ? (
+          <button onClick={handleStaffLogout} className="bottom-nav-item logout-nav-item">
+            <span className="nav-icon">🚪</span>
+            <span className="nav-text">Çıkış</span>
+          </button>
+        ) : (
+          <button onClick={handleLogout} className="bottom-nav-item logout-nav-item">
+            <span className="nav-icon">🚪</span>
+            <span className="nav-text">Çıkış</span>
+          </button>
+        )}
+      </div>
       <div className="main-content">
         <Routes>
           <Route path="/" element={<ApartmentOrder />} />

@@ -144,10 +144,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
   }
+
   50% {
     transform: scale(1.1);
     box-shadow: 0 4px 16px rgba(231, 76, 60, 0.6);
@@ -163,9 +166,12 @@
 }
 
 @keyframes blink {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -290,17 +296,59 @@
 }
 
 /* Mobil uyumluluk */
+/* Mobil uyumluluk */
 @media (max-width: 768px) {
   .apartment-order-container {
     padding: 10px;
+    padding-bottom: 80px;
+    /* Bottom nav için ekstra boşluk */
+    align-items: flex-start;
+    /* İçeriği yukarı hizala */
+    height: auto;
+    min-height: 100vh;
+    background: #f5f5f5;
+    /* Gradientsiz düz arka plan mobilde daha iyi durabilir ama gradient de kalabilir. */
   }
 
   .apartment-order-card {
-    padding: 25px;
+    padding: 20px;
+    box-shadow: none;
+    /* Mobilde kart görünümü yerine düz akış daha iyi olabilir */
+    border-radius: 12px;
   }
 
   .apartment-order-card h1 {
     font-size: 1.5rem;
+    margin-top: 10px;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 16px;
+    /* iOS zoom engellemek için en az 16px */
+    padding: 14px;
+    /* Daha rahat dokunma */
+  }
+
+  .submit-button {
+    width: 100%;
+    padding: 18px;
+    /* Büyük buton */
+    position: sticky;
+    bottom: 80px;
+    /* Nav bar'ın üzerinde */
+    z-index: 90;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .voice-button {
+    width: 44px;
+    height: 44px;
+    /* Minimum Apple touch target */
   }
 }
 
@@ -383,9 +431,17 @@
   font-weight: 600;
 }
 
-.status-pending .my-order-status { color: #d69e2e; }
-.status-completed .my-order-status { color: #38a169; }
-.status-cancelled .my-order-status { color: #e53e3e; }
+.status-pending .my-order-status {
+  color: #d69e2e;
+}
+
+.status-completed .my-order-status {
+  color: #38a169;
+}
+
+.status-cancelled .my-order-status {
+  color: #e53e3e;
+}
 
 .my-order-text {
   color: #2d3748;

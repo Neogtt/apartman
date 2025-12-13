@@ -138,14 +138,28 @@
 @media (max-width: 768px) {
   .staff-login-container {
     padding: 10px;
+    align-items: flex-start;
+    padding-top: 40px;
+    background: #f5f5f5;
   }
 
   .staff-login-card {
-    padding: 25px;
+    padding: 20px;
+    box-shadow: none;
+    background: transparent;
   }
 
   .staff-login-card h1 {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+  }
+
+  .form-group input {
+    padding: 14px;
+    font-size: 16px;
+  }
+
+  .submit-button {
+    padding: 16px;
   }
 }
-

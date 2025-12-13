@@ -178,14 +178,37 @@
 @media (max-width: 768px) {
   .apartment-login-container {
     padding: 10px;
+    align-items: flex-start;
+    padding-top: 40px;
+    background: #f5f5f5;
   }
 
   .apartment-login-card {
-    padding: 25px;
+    padding: 20px;
+    box-shadow: none;
+    background: transparent;
   }
 
   .apartment-login-card h1 {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+  }
+
+  .form-group input,
+  .apartment-select {
+    padding: 14px;
+    font-size: 16px;
+  }
+
+  .submit-button {
+    padding: 16px;
+  }
+
+  .staff-access-button {
+    padding: 14px;
   }
 }
-
