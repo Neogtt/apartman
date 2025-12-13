@@ -9,7 +9,7 @@ async function initializeSheets() {
   try {
     // Service Account bilgileri environment variable'lardan alınacak
     const credentials = process.env.GOOGLE_SERVICE_ACCOUNT;
-    
+
     if (!credentials) {
       console.warn('⚠️  GOOGLE_SERVICE_ACCOUNT environment variable bulunamadı. JSON dosya sistemi kullanılacak.');
       return false;
@@ -119,9 +119,9 @@ async function ensureInitialized() {
     if (isInitialized) {
       // Sheet'leri başlat
       await initSheet(SHEETS.ORDERS, [
-        'id', 'apartmentNumber', 'orderText', 'contactInfo', 
-        'isTrashCollection', 'orderType', 'orderTimeMessage', 
-        'status', 'createdAt', 'updatedAt', 'price', 'isPaid'
+        'id', 'apartmentNumber', 'orderText', 'contactInfo',
+        'isTrashCollection', 'orderType', 'orderTimeMessage',
+        'status', 'createdAt', 'updatedAt', 'price', 'isPaid', 'paymentNote'
       ]);
       await initSheet(SHEETS.APARTMENTS, ['number', 'contactInfo']);
       await initSheet(SHEETS.USERS, ['id', 'apartmentNumber', 'password', 'createdAt']);
@@ -140,7 +140,7 @@ async function readOrders() {
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
-      range: `${SHEETS.ORDERS}!A2:L1000`, // L sütunu isPaid için
+      range: `${SHEETS.ORDERS}!A2:M1000`, // M sütunu paymentNote için
     });
 
     const rows = response.data.values || [];
@@ -159,6 +159,7 @@ async function readOrders() {
         updatedAt: row[9] || '',
         price: row[10] || '', // Fiyat
         isPaid: row[11] === 'TRUE' || row[11] === true, // Ödendi mi?
+        paymentNote: row[12] || '', // Ödeme notu
       }));
 
     // Apartments'ı da oku
@@ -236,7 +237,7 @@ async function writeOrders(data) {
     // Önce mevcut verileri temizle (başlık hariç)
     await sheets.spreadsheets.values.clear({
       spreadsheetId: spreadsheetId,
-      range: `${SHEETS.ORDERS}!A2:L1000`,
+      range: `${SHEETS.ORDERS}!A2:M1000`,
     });
 
     // Yeni verileri ekle
@@ -253,6 +254,7 @@ async function writeOrders(data) {
       order.updatedAt,
       order.price || '',
       order.isPaid ? 'TRUE' : 'FALSE',
+      order.paymentNote || '',
     ]);
 
     if (values.length > 0) {
@@ -370,7 +372,7 @@ async function readData() {
   if (initialized) {
     return await readOrders();
   }
-  
+
   // Fallback: JSON dosyasından oku
   initDataFile();
   try {
@@ -387,7 +389,7 @@ async function writeData(data) {
   if (initialized) {
     return await writeOrders(data);
   }
-  
+
   // Fallback: JSON dosyasına yaz
   initDataFile();
   try {
@@ -404,7 +406,7 @@ async function readUsersData() {
   if (initialized) {
     return await readUsers();
   }
-  
+
   // Fallback: JSON dosyasından oku
   initUsersFile();
   try {
@@ -421,7 +423,7 @@ async function writeUsersData(data) {
   if (initialized) {
     return await writeUsers(data);
   }
-  
+
   // Fallback: JSON dosyasına yaz
   initUsersFile();
   try {
