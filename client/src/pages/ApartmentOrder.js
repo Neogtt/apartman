@@ -7,7 +7,7 @@ function ApartmentOrder() {
   const [apartmentNumber, setApartmentNumber] = useState('');
   const [orderText, setOrderText] = useState('');
   const [contactInfo, setContactInfo] = useState('');
-  const [paymentNote, setPaymentNote] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState('');
   const [isTrashCollection, setIsTrashCollection] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -175,7 +175,7 @@ function ApartmentOrder() {
         apartmentNumber: apartmentNumber.trim(),
         orderText: orderText.trim(),
         contactInfo: contactInfo.trim(),
-        paymentNote: paymentNote.trim(),
+        paymentAmount: paymentAmount, // Send as amount
         isTrashCollection: isTrashCollection
       });
 
@@ -192,7 +192,7 @@ function ApartmentOrder() {
       }
       setOrderText('');
       setContactInfo('');
-      setPaymentNote('');
+      setPaymentAmount('');
       setIsTrashCollection(false);
 
       // Listeyi güncelle
@@ -375,17 +375,19 @@ function ApartmentOrder() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="paymentNote">
-              💲 Sipariş İçin Bırakılan Tutar / Not (Varsa)
+            <label htmlFor="paymentAmount">
+              💲 Bırakılan Tutar (TL)
             </label>
             <input
-              type="text"
-              id="paymentNote"
-              value={paymentNote}
-              onChange={(e) => setPaymentNote(e.target.value)}
-              placeholder="Örn: 200 TL kapıya bırakıldı"
+              type="number"
+              id="paymentAmount"
+              value={paymentAmount}
+              onChange={(e) => setPaymentAmount(e.target.value)}
+              placeholder="Örn: 200"
+              min="0"
               disabled={loading}
             />
+            <small className="form-hint">Sadece rakam giriniz (Tutar)</small>
           </div>
 
           <button

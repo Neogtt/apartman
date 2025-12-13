@@ -361,23 +361,30 @@ function ApartmentManager() {
                 📅 {format(new Date(selectedOrder.createdAt), 'dd.MM.yyyy HH:mm')}
               </p>
 
-              {/* Payment Note Display */}
-              {selectedOrder.paymentNote ? (
+              {/* Payment Amount Display & Calculation */}
+              {selectedOrder.paymentAmount ? (
                 <div className="payment-note-display">
                   <span className="payment-note-label">💵 Bırakılan Tutar:</span>
-                  <span className="payment-note-value">{selectedOrder.paymentNote}</span>
+                  <span className="payment-note-value">{selectedOrder.paymentAmount} TL</span>
+
+                  {price && (
+                    <div className={`payment-calculation ${parseFloat(selectedOrder.paymentAmount) - parseFloat(price) >= 0 ? 'change-positive' : 'change-negative'}`}>
+                      {parseFloat(selectedOrder.paymentAmount) - parseFloat(price) >= 0
+                        ? `💰 Para Üstü: ${(parseFloat(selectedOrder.paymentAmount) - parseFloat(price)).toFixed(2)} TL`
+                        : `⚠️ Borç: ${(parseFloat(price) - parseFloat(selectedOrder.paymentAmount)).toFixed(2)} TL`
+                      }
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="payment-warning-display">
-                  ⚠️ Sipariş için ödeme notu girilmedi
+                  ⚠️ Sipariş için ödeme tutarı girilmedi
                 </div>
               )}
 
-              {/* Active View Actions: Complete/Cancel */}
+              <hr />
               {selectedOrder.status === 'pending' && (
                 <div className="completion-form">
-
-                  <hr />
                   <h4>Siparişi Tamamla</h4>
                   <div className="form-group">
                     <label>Tutar (TL):</label>
@@ -434,7 +441,8 @@ function ApartmentManager() {
             <button className="close-modal-btn" onClick={() => setSelectedOrder(null)}>Kapat</button>
           </div>
         </div>
-      )}
+      )
+      }
 
       <div className="view-tabs">
         <button
@@ -487,7 +495,7 @@ function ApartmentManager() {
           ))
         )}
       </div>
-    </div>
+    </div >
   );
 }
 

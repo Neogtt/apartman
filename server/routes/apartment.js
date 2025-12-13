@@ -83,7 +83,7 @@ function getOrderTimeInfo() {
 // Yeni sipariş ekle
 router.post('/orders', async (req, res) => {
   try {
-    const { apartmentNumber, orderText, contactInfo, isTrashCollection, paymentNote } = req.body;
+    const { apartmentNumber, orderText, contactInfo, isTrashCollection, paymentAmount } = req.body;
 
     if (!apartmentNumber || !orderText) {
       return res.status(400).json({ error: 'Daire numarası ve sipariş metni gereklidir' });
@@ -104,7 +104,7 @@ router.post('/orders', async (req, res) => {
       apartmentNumber: apartmentNumber.toString(),
       orderText,
       contactInfo: contactInfo || '',
-      paymentNote: paymentNote || '', // Sipariş ile bırakılan ödeme notu
+      paymentAmount: paymentAmount || '', // Sipariş ile bırakılan tutar
       isTrashCollection: isTrashCollection || false,
       orderType: timeInfo.orderType, // morning, lunch, evening
       orderTimeMessage: timeInfo.message,

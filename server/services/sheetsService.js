@@ -121,7 +121,7 @@ async function ensureInitialized() {
       await initSheet(SHEETS.ORDERS, [
         'id', 'apartmentNumber', 'orderText', 'contactInfo',
         'isTrashCollection', 'orderType', 'orderTimeMessage',
-        'status', 'createdAt', 'updatedAt', 'price', 'isPaid', 'paymentNote'
+        'status', 'createdAt', 'updatedAt', 'price', 'isPaid', 'paymentAmount'
       ]);
       await initSheet(SHEETS.APARTMENTS, ['number', 'contactInfo']);
       await initSheet(SHEETS.USERS, ['id', 'apartmentNumber', 'password', 'createdAt']);
@@ -159,7 +159,7 @@ async function readOrders() {
         updatedAt: row[9] || '',
         price: row[10] || '', // Fiyat
         isPaid: row[11] === 'TRUE' || row[11] === true, // Ödendi mi?
-        paymentNote: row[12] || '', // Ödeme notu
+        paymentAmount: row[12] || '', // Ödeme tutarı
       }));
 
     // Apartments'ı da oku
@@ -254,7 +254,7 @@ async function writeOrders(data) {
       order.updatedAt,
       order.price || '',
       order.isPaid ? 'TRUE' : 'FALSE',
-      order.paymentNote || '',
+      order.paymentAmount || '',
     ]);
 
     if (values.length > 0) {

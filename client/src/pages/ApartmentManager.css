@@ -504,3 +504,24 @@
   align-items: center;
   gap: 8px;
 }
+
+.payment-calculation {
+  font-weight: bold;
+  font-size: 1rem;
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 5px;
+  text-align: center;
+}
+
+.payment-calculation.change-positive {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.payment-calculation.change-negative {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+}
