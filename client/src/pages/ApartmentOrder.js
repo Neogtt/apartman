@@ -15,6 +15,7 @@ function ApartmentOrder() {
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState(null);
   const [timeInfo, setTimeInfo] = useState(null);
+  const [editingOrderId, setEditingOrderId] = useState(null);
   const [myOrders, setMyOrders] = useState([]);
   const [totalDebt, setTotalDebt] = useState(0);
 
