@@ -266,7 +266,7 @@ router.patch('/orders/:id', async (req, res) => {
     const { id } = req.params;
     const { status, price, isPaid } = req.body;
 
-    if (!status || !['pending', 'completed', 'cancelled'].includes(status)) {
+    if (status && !['pending', 'completed', 'cancelled'].includes(status)) {
       return res.status(400).json({ error: 'Geçerli bir durum gereklidir (pending, completed, cancelled)' });
     }
 
@@ -277,8 +277,10 @@ router.patch('/orders/:id', async (req, res) => {
       return res.status(404).json({ error: 'Sipariş bulunamadı' });
     }
 
-    // Durum güncelleme
-    data.orders[orderIndex].status = status;
+    // Durum güncelleme (varsa)
+    if (status) {
+      data.orders[orderIndex].status = status;
+    }
 
     // Fiyat ve Ödeme durumu güncelleme (eğer geldiyse)
     if (price !== undefined) data.orders[orderIndex].price = price;
