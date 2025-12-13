@@ -142,6 +142,91 @@ function ApartmentManager() {
 
   const debtInfo = getDebtStats();
 
+  // Payment Logic
+  const [paymentAmounts, setPaymentAmounts] = useState({});
+
+  const handlePaymentAmountChange = (apt, value) => {
+    setPaymentAmounts(prev => ({
+      ...prev,
+      [apt]: value
+    }));
+  };
+
+  const handleFullPayment = async (apt) => {
+    if (!window.confirm(`Daire ${apt} için tüm borcu kapatmak istiyor musunuz?`)) return;
+
+    const aptOrders = orders.filter(o =>
+      o.apartmentNumber === apt &&
+      o.status === 'completed' &&
+      o.price &&
+      !o.isPaid
+    );
+
+    try {
+      for (const order of aptOrders) {
+        await updateApartmentOrderStatus(order.id, { isPaid: true });
+      }
+      alert(`Daire ${apt} için tüm borçlar ödendi.`);
+      await loadOrders();
+      await loadStats();
+    } catch (error) {
+      alert('Ödeme işlemi sırasında hata oluştu.');
+      console.error(error);
+    }
+  };
+
+  const handlePartialPayment = async (apt) => {
+    const amount = parseFloat(paymentAmounts[apt]);
+    if (!amount || amount <= 0) {
+      alert('Geçerli bir tutar giriniz.');
+      return;
+    }
+
+    if (!window.confirm(`Daire ${apt} için ${amount} TL ödeme almak istiyor musunuz?`)) return;
+
+    // Find unpaid orders, sort by date (oldest first)
+    // Assuming createdAt is ISO string
+    let aptOrders = orders.filter(o =>
+      o.apartmentNumber === apt &&
+      o.status === 'completed' &&
+      o.price &&
+      !o.isPaid
+    ).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    let remaining = amount;
+    let updatedCount = 0;
+
+    try {
+      for (const order of aptOrders) {
+        if (remaining <= 0) break;
+
+        const orderPrice = parseFloat(order.price);
+
+        if (remaining >= orderPrice) {
+          // Fully pay this order
+          await updateApartmentOrderStatus(order.id, { isPaid: true });
+          remaining -= orderPrice;
+          updatedCount++;
+        } else {
+          // Partial pay this order (Update price)
+          // We update the price to be the remaining debt
+          const newPrice = orderPrice - remaining;
+          await updateApartmentOrderStatus(order.id, { price: newPrice });
+          remaining = 0;
+          updatedCount++;
+        }
+      }
+
+      alert(`Ödeme alındı. ${updatedCount} işlem güncellendi.`);
+      setPaymentAmounts(prev => ({ ...prev, [apt]: '' }));
+      await loadOrders();
+      await loadStats();
+    } catch (error) {
+      alert('Ödeme işlemi sırasında hata oluştu.');
+      console.error(error);
+    }
+  };
+
 
   const getStatusBadge = (status) => {
     const badges = {
@@ -197,9 +282,33 @@ function ApartmentManager() {
             ) : (
               <ul className="debt-list">
                 {Object.entries(debtInfo.debtMap).map(([apt, amount]) => (
-                  <li key={apt} className="debt-item">
-                    <span className="debt-apt">Daire {apt}</span>
-                    <span className="debt-amount negative">{amount} TL</span>
+                  <li key={apt} className="debt-item-container">
+                    <div className="debt-item-header">
+                      <span className="debt-apt">Daire {apt}</span>
+                      <span className="debt-amount negative">{parseFloat(amount).toFixed(2)} TL</span>
+                    </div>
+                    <div className="debt-actions-row">
+                      <input
+                        type="number"
+                        className="debt-input"
+                        placeholder="Tutar"
+                        value={paymentAmounts[apt] || ''}
+                        onChange={(e) => handlePaymentAmountChange(apt, e.target.value)}
+                      />
+                      <button
+                        className="btn-pay"
+                        onClick={() => handlePartialPayment(apt)}
+                        disabled={!paymentAmounts[apt]}
+                      >
+                        Öde
+                      </button>
+                      <button
+                        className="btn-pay-all"
+                        onClick={() => handleFullPayment(apt)}
+                      >
+                        Tamamını Öde
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>

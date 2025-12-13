@@ -344,19 +344,73 @@
   overflow-y: auto;
 }
 
-.debt-item {
+/* Debt List Items */
+.debt-item-container {
   display: flex;
-  justify-content: space-between;
-  padding: 12px;
+  flex-direction: column;
+  padding: 15px;
   border-bottom: 1px solid #eee;
+  gap: 12px;
 }
 
-.debt-item:last-child {
+.debt-item-container:last-child {
   border-bottom: none;
+}
+
+.debt-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.debt-actions-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.debt-input {
+  width: 100px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.btn-pay,
+.btn-pay-all {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  transition: opacity 0.2s;
+}
+
+.btn-pay {
+  background-color: #3498db;
+}
+
+.btn-pay:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.btn-pay-all {
+  background-color: #27ae60;
+}
+
+.btn-pay:hover:not(:disabled),
+.btn-pay-all:hover {
+  opacity: 0.9;
 }
 
 .debt-apt {
   font-weight: 600;
+  color: #2c3e50;
 }
 
 .debt-amount {
@@ -364,7 +418,7 @@
 }
 
 .debt-amount.negative {
-  color: #e74c3c;
+  color: #c0392b;
 }
 
 /* Mobile Adjustments */
