@@ -381,34 +381,62 @@
   font-size: 0.9rem;
 }
 
-/* My Orders Section */
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.submit-button.edit-mode {
+  background-color: #f57f17;
+  /* Turuncu */
+  flex: 2;
+}
+
+.cancel-edit-button {
+  background-color: #ef5350;
+  /* Kırmızı */
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.cancel-edit-button:hover {
+  background-color: #e53935;
+  transform: translateY(-2px);
+}
+
+/* My Orders List */
 .my-orders-section {
   margin-top: 30px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid #eee;
   padding-top: 20px;
 }
 
 .my-orders-section h3 {
-  color: #2d3748;
-  font-size: 1.2rem;
+  color: #333;
   margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-size: 1.1rem;
 }
 
 .my-orders-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
 }
 
 .my-order-item {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 12px;
-  transition: all 0.2s;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
 }
 
 .my-order-item.unpaid {
@@ -419,8 +447,36 @@
 .my-order-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 5px;
+  align-items: center;
+  margin-bottom: 8px;
   font-size: 0.85rem;
+  color: #666;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-order-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.edit-order-btn:hover {
+  background-color: #eee;
+}
+
+.edit-order-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  filter: grayscale(100%);
 }
 
 .my-order-date {

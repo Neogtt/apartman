@@ -261,11 +261,11 @@ router.post('/auth/staff-login', (req, res) => {
   }
 });
 
-// Sipariş durumunu güncelle
+// Sipariş durumunu veya içeriğini güncelle
 router.patch('/orders/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, price, isPaid } = req.body;
+    const { status, price, isPaid, orderText, paymentAmount, contactInfo, isTrashCollection } = req.body;
 
     if (status && !['pending', 'completed', 'cancelled'].includes(status)) {
       return res.status(400).json({ error: 'Geçerli bir durum gereklidir (pending, completed, cancelled)' });
@@ -278,20 +278,47 @@ router.patch('/orders/:id', async (req, res) => {
       return res.status(404).json({ error: 'Sipariş bulunamadı' });
     }
 
+    const order = data.orders[orderIndex];
+
+    // İçerik güncellemesi varsa (status değişimi dışında) kontrol et
+    const isContentUpdate = orderText !== undefined || paymentAmount !== undefined || contactInfo !== undefined || isTrashCollection !== undefined;
+
+    if (isContentUpdate) {
+      // Sadece bekleyen siparişler düzenlenebilir
+      if (order.status !== 'pending') {
+        return res.status(400).json({ error: 'Sadece bekleyen siparişler düzenlenebilir' });
+      }
+
+      // Sipariş saat kontrolü
+      const timeInfo = getOrderTimeInfo();
+      if (!timeInfo.canOrder) {
+        return res.status(400).json({
+          error: 'Sipariş saatleri dışında düzenleme yapılamaz',
+          timeInfo: timeInfo
+        });
+      }
+
+      // Güncellemeleri uygula
+      if (orderText !== undefined) order.orderText = orderText;
+      if (paymentAmount !== undefined) order.paymentAmount = paymentAmount;
+      if (contactInfo !== undefined) order.contactInfo = contactInfo;
+      if (isTrashCollection !== undefined) order.isTrashCollection = isTrashCollection;
+    }
+
     // Durum güncelleme (varsa)
     if (status) {
-      data.orders[orderIndex].status = status;
+      order.status = status;
     }
 
     // Fiyat ve Ödeme durumu güncelleme (eğer geldiyse)
-    if (price !== undefined) data.orders[orderIndex].price = price;
-    if (isPaid !== undefined) data.orders[orderIndex].isPaid = isPaid;
+    if (price !== undefined) order.price = price;
+    if (isPaid !== undefined) order.isPaid = isPaid;
 
-    data.orders[orderIndex].updatedAt = new Date().toISOString();
+    order.updatedAt = new Date().toISOString();
 
     const success = await sheetsService.writeData(data);
     if (success) {
-      res.json(data.orders[orderIndex]);
+      res.json(order);
     } else {
       res.status(500).json({ error: 'Sipariş güncellenemedi' });
     }

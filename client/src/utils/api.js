@@ -21,6 +21,7 @@ export const updateApartmentOrderStatus = (id, data) => {
   const payload = typeof data === 'string' ? { status: data } : data;
   return api.patch(`/apartment/orders/${id}`, payload);
 };
+export const updateApartmentOrder = updateApartmentOrderStatus; // Alias for content updates
 export const deleteApartmentOrder = (id) => api.delete(`/apartment/orders/${id}`);
 export const getApartments = () => api.get('/apartment/apartments');
 export const getApartmentStats = () => api.get('/apartment/stats');

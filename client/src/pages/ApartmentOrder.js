@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createApartmentOrder, getOrderTimeInfo, getApartmentOrdersByNumber } from '../utils/api';
+import { createApartmentOrder, getOrderTimeInfo, getApartmentOrdersByNumber, updateApartmentOrder } from '../utils/api';
 import { format } from 'date-fns';
 import './ApartmentOrder.css';
 
@@ -159,6 +159,27 @@ function ApartmentOrder() {
     initSpeechRecognition();
   }, []);
 
+  // Düzenleme modunu başlat
+  const handleEdit = (order) => {
+    setEditingOrderId(order.id);
+    setOrderText(order.orderText);
+    setContactInfo(order.contactInfo || '');
+    setPaymentAmount(order.paymentAmount || '');
+    setIsTrashCollection(order.isTrashCollection || false);
+
+    // Formun görünür olduğundan emin ol (mobil için önemli)
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Düzenlemeyi iptal et
+  const cancelEdit = () => {
+    setEditingOrderId(null);
+    setOrderText('');
+    setContactInfo('');
+    setPaymentAmount('');
+    setIsTrashCollection(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -171,38 +192,47 @@ function ApartmentOrder() {
 
     setLoading(true);
     try {
-      const response = await createApartmentOrder({
-        apartmentNumber: apartmentNumber.trim(),
-        orderText: orderText.trim(),
-        contactInfo: contactInfo.trim(),
-        paymentAmount: paymentAmount, // Send as amount
-        isTrashCollection: isTrashCollection
-      });
+      let response;
 
-      // Saat bilgisini güncelle
-      if (response.data.timeInfo) {
+      if (editingOrderId) {
+        // Mevcut siparişi güncelle
+        response = await updateApartmentOrder(editingOrderId, {
+          orderText: orderText.trim(),
+          contactInfo: contactInfo.trim(),
+          paymentAmount: paymentAmount,
+          isTrashCollection: isTrashCollection
+        });
+      } else {
+        // Yeni sipariş oluştur
+        response = await createApartmentOrder({
+          apartmentNumber: apartmentNumber.trim(),
+          orderText: orderText.trim(),
+          contactInfo: contactInfo.trim(),
+          paymentAmount: paymentAmount,
+          isTrashCollection: isTrashCollection
+        });
+      }
+
+      // Saat bilgisi varsa güncelle (yeni siparişte döner)
+      if (response.data && response.data.timeInfo) {
         setTimeInfo(response.data.timeInfo);
       }
 
       setSuccess(true);
-      // Daire numarasını sadece giriş yapılmamışsa temizle
+
+      // State'leri temizle
       const savedUser = localStorage.getItem('apartmentUser');
       if (!savedUser) {
         setApartmentNumber('');
       }
-      setOrderText('');
-      setContactInfo('');
-      setPaymentAmount('');
-      setIsTrashCollection(false);
 
-      // Listeyi güncelle
+      cancelEdit(); // Formu sıfırla
+
       loadMyOrders();
 
-      // Başarı mesajını 5 saniye sonra kaldır
       setTimeout(() => setSuccess(false), 5000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Sipariş gönderilirken bir hata oluştu. Lütfen tekrar deneyin.');
-      // Hata durumunda saat bilgisini güncelle
+      setError(err.response?.data?.error || 'Sipariş işlenirken bir hata oluştu. Lütfen tekrar deneyin.');
       if (err.response?.data?.timeInfo) {
         setTimeInfo(err.response.data.timeInfo);
       }
@@ -390,13 +420,28 @@ function ApartmentOrder() {
             <small className="form-hint">Sadece rakam giriniz (Tutar)</small>
           </div>
 
-          <button
-            type="submit"
-            className="submit-button"
-            disabled={loading || (timeInfo && !timeInfo.canOrder)}
-          >
-            {loading ? 'Gönderiliyor...' : (timeInfo && !timeInfo.canOrder) ? '⏰ Sipariş Saatleri Dışı' : '📤 Siparişi Gönder'}
-          </button>
+          <div className="form-actions">
+            <button
+              type="submit"
+              className={`submit-button ${editingOrderId ? 'edit-mode' : ''}`}
+              disabled={loading || (!editingOrderId && timeInfo && !timeInfo.canOrder)}
+            >
+              {loading ? 'İşleniyor...' :
+                editingOrderId ? '✏️ Siparişi Güncelle' :
+                  (timeInfo && !timeInfo.canOrder) ? '⏰ Sipariş Saatleri Dışı' : '📤 Siparişi Gönder'}
+            </button>
+
+            {editingOrderId && (
+              <button
+                type="button"
+                className="cancel-edit-button"
+                onClick={cancelEdit}
+                disabled={loading}
+              >
+                ❌ Vazgeç
+              </button>
+            )}
+          </div>
         </form>
 
         {myOrders.length > 0 && (
@@ -407,10 +452,22 @@ function ApartmentOrder() {
                 <div key={order.id} className={`my - order - item status - ${order.status} ${!order.isPaid && order.status === 'completed' && order.price ? 'unpaid' : ''} `}>
                   <div className="my-order-header">
                     <span className="my-order-date">{format(new Date(order.createdAt), 'dd.MM HH:mm')}</span>
-                    <span className="my-order-status">
-                      {order.status === 'pending' ? '⏳ Bekliyor' :
-                        order.status === 'completed' ? '✅ Tamamlandı' : '❌ İptal'}
-                    </span>
+                    <div className="header-actions">
+                      <span className="my-order-status">
+                        {order.status === 'pending' ? '⏳ Bekliyor' :
+                          order.status === 'completed' ? '✅ Tamamlandı' : '❌ İptal'}
+                      </span>
+                      {order.status === 'pending' && (
+                        <button
+                          className="edit-order-btn"
+                          onClick={() => handleEdit(order)}
+                          title="Siparişi Düzenle"
+                          disabled={timeInfo && !timeInfo.canOrder}
+                        >
+                          ✏️
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="my-order-text">{order.orderText}</div>
                   {order.status === 'completed' && order.price && (
