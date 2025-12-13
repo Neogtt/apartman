@@ -7,6 +7,7 @@ function ApartmentOrder() {
   const [apartmentNumber, setApartmentNumber] = useState('');
   const [orderText, setOrderText] = useState('');
   const [contactInfo, setContactInfo] = useState('');
+  const [paymentNote, setPaymentNote] = useState('');
   const [isTrashCollection, setIsTrashCollection] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -174,6 +175,7 @@ function ApartmentOrder() {
         apartmentNumber: apartmentNumber.trim(),
         orderText: orderText.trim(),
         contactInfo: contactInfo.trim(),
+        paymentNote: paymentNote.trim(),
         isTrashCollection: isTrashCollection
       });
 
@@ -190,6 +192,7 @@ function ApartmentOrder() {
       }
       setOrderText('');
       setContactInfo('');
+      setPaymentNote('');
       setIsTrashCollection(false);
 
       // Listeyi güncelle
@@ -364,11 +367,25 @@ function ApartmentOrder() {
                 onChange={(e) => setIsTrashCollection(e.target.checked)}
                 disabled={loading}
               />
-              <span>🗑️ Çöp Alma</span>
+              <span>🗑️ Çöp Yok / Kapıyı Çalmayınız</span>
             </label>
             <small className="form-hint">
-              Çöp alma işaretlenirse, görevli kapınızı çalmaz, sadece çöpü alır
+              İşaretlerseniz görevli çöp için kapınızı çalmayacaktır.
             </small>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="paymentNote">
+              💲 Sipariş İçin Bırakılan Tutar / Not (Varsa)
+            </label>
+            <input
+              type="text"
+              id="paymentNote"
+              value={paymentNote}
+              onChange={(e) => setPaymentNote(e.target.value)}
+              placeholder="Örn: 200 TL kapıya bırakıldı"
+              disabled={loading}
+            />
           </div>
 
           <button

@@ -332,17 +332,51 @@ function ApartmentManager() {
             </div>
 
             <div className="modal-body-content">
-              <p className="modal-order-text">{selectedOrder.orderText}</p>
+              {/* Detailed Order Info - Visible for all statuses */}
+              {selectedOrder.isTrashCollection && (
+                <div className="trash-badge">
+                  ⛔️ KAPIYI ÇALMA (Çöp Yok / İstemiyor)
+                </div>
+              )}
+
+              {selectedOrder.orderType && (
+                <div className={`order-type-badge order-type-${selectedOrder.orderType}`}>
+                  {selectedOrder.orderType === 'morning' && '🌅 Sabah Siparişi'}
+                  {selectedOrder.orderType === 'lunch' && '🍽️ Öğlen Siparişi'}
+                  {selectedOrder.orderType === 'evening' && '🌆 Akşam Siparişi'}
+                </div>
+              )}
+
               {selectedOrder.orderTimeMessage && (
                 <p className="order-time-message">📌 {selectedOrder.orderTimeMessage}</p>
               )}
+
+              <p className="modal-order-text">{selectedOrder.orderText}</p>
+
+              {selectedOrder.contactInfo && (
+                <p className="order-contact">📞 {selectedOrder.contactInfo}</p>
+              )}
+
               <p className="order-date">
                 📅 {format(new Date(selectedOrder.createdAt), 'dd.MM.yyyy HH:mm')}
               </p>
 
+              {/* Payment Note Display */}
+              {selectedOrder.paymentNote ? (
+                <div className="payment-note-display">
+                  <span className="payment-note-label">💵 Bırakılan Tutar:</span>
+                  <span className="payment-note-value">{selectedOrder.paymentNote}</span>
+                </div>
+              ) : (
+                <div className="payment-warning-display">
+                  ⚠️ Sipariş için ödeme notu girilmedi
+                </div>
+              )}
+
               {/* Active View Actions: Complete/Cancel */}
               {selectedOrder.status === 'pending' && (
                 <div className="completion-form">
+
                   <hr />
                   <h4>Siparişi Tamamla</h4>
                   <div className="form-group">
