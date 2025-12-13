@@ -17,7 +17,7 @@ function ApartmentManager() {
 
   // Modals state
   const [selectedOrder, setSelectedOrder] = useState(null); // For completion OR viewing details
-  const [debtModalOpen, setDebtModalOpen] = useState(false);
+  const [showDebtModal, setShowDebtModal] = useState(false);
 
   // Completion form state
   const [price, setPrice] = useState('');
@@ -118,26 +118,49 @@ function ApartmentManager() {
     return matchesMode && matchesSearch;
   });
 
-  // Debt Calculation Logic
+  // Borç ve Alacak İstatistiklerini Hesapla
   const getDebtStats = () => {
     const debtMap = {};
     let totalDebt = 0;
-    let debtorCount = 0;
 
+    // Tüm siparişleri tara
     orders.forEach(order => {
+      const apt = order.apartmentNumber;
+      if (!debtMap[apt]) {
+        debtMap[apt] = {
+          debt: 0, // Eski borçlar (Completed & Unpaid)
+          pendingPayment: 0, // Bekleyen siparişler için bırakılan (Pending & PaymentAmount)
+          net: 0 // Net durum (Alacak - Borç)
+        };
+      }
+
+      // 1. Eski Borçları Hesapla (Tamamlanmış ama ödenmemiş)
       if (order.status === 'completed' && order.price && !order.isPaid) {
-        const apt = order.apartmentNumber;
-        if (!debtMap[apt]) {
-          debtMap[apt] = 0;
-          debtorCount++;
-        }
         const amount = parseFloat(order.price) || 0;
-        debtMap[apt] += amount;
+        debtMap[apt].debt += amount;
         totalDebt += amount;
+      }
+
+      // 2. Bekleyen Ödemeleri Hesapla (Sipariş ile bırakılan tutarlar)
+      if (order.status === 'pending' && order.paymentAmount) {
+        const amount = parseFloat(order.paymentAmount) || 0;
+        debtMap[apt].pendingPayment += amount;
       }
     });
 
-    return { debtMap, totalDebt, debtorCount };
+    // Net durumu hesapla ve sadece işlem olanları filtrele
+    const activeDebtors = Object.entries(debtMap)
+      .filter(([_, stats]) => stats.debt > 0 || stats.pendingPayment > 0)
+      .map(([apt, stats]) => {
+        stats.net = stats.pendingPayment - stats.debt;
+        return { apt, ...stats };
+      });
+
+    return {
+      debtMap: activeDebtors, // Array olarak dönecek artık
+      totalDebt,
+      debtorCount: activeDebtors.length
+    };
   };
 
   const debtInfo = getDebtStats();
@@ -261,65 +284,84 @@ function ApartmentManager() {
             <div className="stat-label">Bekleyen Sipariş</div>
           </div>
 
-          <div
-            className="stat-card stat-debt clickable-stat"
-            onClick={() => setDebtModalOpen(true)}
-          >
+          <div className="stat-card urgent" onClick={() => setShowDebtModal(true)} style={{ cursor: 'pointer' }}>
             <div className="stat-value">{debtInfo.debtorCount}</div>
-            <div className="stat-label">Borçlu Daire</div>
-            <div className="stat-sublabel">Toplam: {debtInfo.totalDebt} TL</div>
+            <div className="stat-label">Borçlu / Alacıklı Daireler</div>
+            <div className="stat-sub">Detaylar için tıklayın ➡️</div>
           </div>
         </div>
       )}
 
-      {/* Debt List Modal */}
-      {debtModalOpen && (
-        <div className="modal-overlay" onClick={() => setDebtModalOpen(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>💰 Borçlu Daireler</h3>
-            {Object.keys(debtInfo.debtMap).length === 0 ? (
-              <p>Borçlu daire bulunmamaktadır.</p>
-            ) : (
-              <ul className="debt-list">
-                {Object.entries(debtInfo.debtMap).map(([apt, amount]) => (
-                  <li key={apt} className="debt-item-container">
-                    <div className="debt-item-header">
-                      <span className="debt-apt">Daire {apt}</span>
-                      <span className="debt-amount negative">{parseFloat(amount).toFixed(2)} TL</span>
-                    </div>
-                    <div className="debt-actions-row">
-                      <input
-                        type="number"
-                        className="debt-input"
-                        placeholder="Tutar"
-                        value={paymentAmounts[apt] || ''}
-                        onChange={(e) => handlePaymentAmountChange(apt, e.target.value)}
-                      />
-                      <button
-                        className="btn-pay"
-                        onClick={() => handlePartialPayment(apt)}
-                        disabled={!paymentAmounts[apt]}
-                      >
-                        Öde
-                      </button>
-                      <button
-                        className="btn-pay-all"
-                        onClick={() => handleFullPayment(apt)}
-                      >
-                        Tamamını Öde
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="modal-actions">
-              <button className="cancel-button" onClick={() => setDebtModalOpen(false)}>Kapat</button>
+      {/* Debt Detail Modal */}
+      {showDebtModal && (
+        <div className="modal-overlay" onClick={() => setShowDebtModal(false)}>
+          <div className="modal-content debt-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Borçlu / Alacıklı Daireler</h3>
             </div>
+            <div className="modal-body-content">
+              {debtInfo.debtMap.length === 0 ? (
+                <p className="no-debt-message">Borçlu veya alacaklı daire bulunmuyor.</p>
+              ) : (
+                <div className="debt-list">
+                  {debtInfo.debtMap.map(stat => (
+                    <div key={stat.apt} className={`debt-item-container ${stat.net > 0 ? 'status-credit' : stat.net < 0 ? 'status-debt' : ''}`}>
+                      <div className="debt-item-header">
+                        <span className="debt-apt">Daire {stat.apt}</span>
+                        <div className="debt-summary">
+                          {stat.net > 0 && <span className="net-tag credit">Alacaklı: +{stat.net.toFixed(2)} TL</span>}
+                          {stat.net < 0 && <span className="net-tag debt">Borçlu: {Math.abs(stat.net).toFixed(2)} TL</span>}
+                          {stat.net === 0 && <span className="net-tag neutral">Hesap Denk</span>}
+                        </div>
+                      </div>
+
+                      <div className="debt-details-row">
+                        {stat.debt > 0 && (
+                          <div className="detail-box debt-box">
+                            <span className="label">Eski Borç:</span>
+                            <span className="value">-{stat.debt.toFixed(2)} TL</span>
+                          </div>
+                        )}
+                        {stat.pendingPayment > 0 && (
+                          <div className="detail-box credit-box">
+                            <span className="label">Bırakılan:</span>
+                            <span className="value">+{stat.pendingPayment.toFixed(2)} TL</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="debt-actions-row">
+                        <div className="payment-input-group">
+                          <input
+                            type="number"
+                            placeholder="Ödeme Tutarı"
+                            className="debt-input"
+                            value={paymentAmounts[stat.apt] || ''}
+                            onChange={(e) => handlePaymentAmountChange(stat.apt, e.target.value)}
+                          />
+                          <button
+                            className="btn-pay"
+                            disabled={!paymentAmounts[stat.apt]}
+                            onClick={() => handlePartialPayment(stat.apt)}
+                          >
+                            Öde
+                          </button>
+                        </div>
+                        {stat.debt > 0 && (
+                          <button className="btn-pay-all" onClick={() => handleFullPayment(stat.apt)}>
+                            Tamamını Öde
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button className="close-modal-btn" onClick={() => setShowDebtModal(false)}>Kapat</button>
           </div>
         </div>
       )}
-
       {/* Order Detail / Completion Modal */}
       {selectedOrder && (
         <div className="modal-overlay" onClick={() => setSelectedOrder(null)}>
